@@ -1,0 +1,1212 @@
+import struct
+import time
+import threading
+import queue
+from enum import Enum, IntEnum
+from abc import ABC, abstractmethod
+from typing import Tuple, Optional, Callable, Dict, Any, List
+
+
+# --- crc.py ---
+def crc16_ccitt(data: bytes, initial_value: int = 0x0000) -> int:
+    """
+    计算CRC16-CCITT (XMODEM) 校验码。
+    Args:
+        data (bytes): 需要计算CRC的数据。
+        initial_value (int): CRC的初始值，默认为0x0000。
+    Returns:
+        int: 计算出的16位CRC校验码。
+    """
+    crc = initial_value
+    polynomial = 0x1021
+    for byte in data:
+        crc ^= byte << 8
+        for _ in range(8):
+            if crc & 0x8000:
+                crc = (crc << 1) ^ polynomial
+            else:
+                crc <<= 1
+    return crc & 0xFFFF
+
+
+# --- exceptions.py ---
+class ProtocolError(Exception):
+    """协议相关错误的基类。"""
+
+    pass
+
+
+class InvalidPacketError(ProtocolError):
+    """当接收到的数据包无效（例如：CRC不匹配，格式错误）时引发。"""
+
+    pass
+
+
+class TimeoutError(ProtocolError):
+    """当通信操作超时时引发。"""
+
+    pass
+
+
+class CommunicationError(ProtocolError):
+    """当发生通用通信故障时引发。"""
+
+    pass
+
+
+# --- message.py ---
+class MessageType(IntEnum):
+    """定义协议中消息的类型。"""
+
+    COMMAND = 0x01  # 上位机发送给下位机的命令
+    RESPONSE = 0x02  # 下位机回复上位机的响应数据
+    ACK = 0x03  # 确认包，表示成功接收并处理
+    NACK = 0x04  # 否定确认包，表示接收或处理失败
+    HEARTBEAT_REQ = 0x05  # 心跳请求包
+    HEARTBEAT_RESP = 0x06  # 心跳响应包
+
+
+class CommandCode(IntEnum):
+    """定义特定消息类型下的子命令代码。"""
+
+    NONE = 0x00  # 无特定命令
+    STATUS_REQUEST = 0x01  # 请求设备状态
+    STATUS_REPORT = 0x02  # 报告设备状态
+    ERROR_REPORT = 0xFF  # 错误报告
+
+    # 示例：设备特定命令
+    SET_LED_STATE = 0x10  # 设置LED状态
+    GET_TEMPERATURE = 0x11  # 获取温度
+    SET_MOTOR_SPEED = 0x12  # 设置电机速度
+
+
+class ProtocolMessage(ABC):
+    """
+    应用层协议消息的抽象基类。
+    所有具体的应用层消息都应继承此基类。
+    """
+
+    def __init__(self, command_code: CommandCode):
+        self.command_code = command_code
+
+    @abstractmethod
+    def to_bytes(self) -> bytes:
+        """将消息的特定数据序列化为字节串。"""
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def from_bytes(command_code: CommandCode, data: bytes) -> "ProtocolMessage":
+        """将字节串反序列化为具体的ProtocolMessage对象。"""
+        pass
+
+    def __repr__(self) -> str:
+        """返回消息的字符串表示形式。"""
+        try:
+            payload_hex = self.to_bytes().hex()
+        except NotImplementedError:
+            payload_hex = "N/A (abstract)"
+        return f"{self.__class__.__name__}(command_code={self.command_code.name}, payload_hex={payload_hex})"
+
+
+class GenericAckNackMessage(ProtocolMessage):
+    """用于ACK/NACK包或其他无需特定负载的消息。"""
+
+    def __init__(self, command_code: CommandCode = CommandCode.NONE):
+        super().__init__(command_code)
+
+    def to_bytes(self) -> bytes:
+        """返回空字节串，因为没有特定负载。"""
+        return b""
+
+    @staticmethod
+    def from_bytes(command_code: CommandCode, data: bytes) -> "GenericAckNackMessage":
+        """从字节串反序列化（忽略数据，因为是通用消息）。"""
+        return GenericAckNackMessage(command_code)
+
+
+class LedControlMessage(ProtocolMessage):
+    """控制LED状态的应用层消息。"""
+
+    def __init__(self, state: bool):
+        super().__init__(CommandCode.SET_LED_STATE)
+        self.state = state
+
+    def to_bytes(self) -> bytes:
+        """将LED状态转换为字节 (True -> 0x01, False -> 0x00)。"""
+        return b"\x01" if self.state else b"\x00"
+
+    @staticmethod
+    def from_bytes(command_code: CommandCode, data: bytes) -> "LedControlMessage":
+        """从字节串反序列化LED状态。"""
+        if not data or len(data) != 1:
+            raise ValueError("LedControlMessage数据无效。")
+        state = data[0] == 0x01
+        return LedControlMessage(state)
+
+    def __repr__(self) -> str:
+        return f"LedControlMessage(state={self.state}, command_code={self.command_code.name})"
+
+
+class TemperatureMessage(ProtocolMessage):
+    """包含温度数据的应用层消息。"""
+
+    def __init__(self, temperature: float):
+        super().__init__(CommandCode.GET_TEMPERATURE)
+        self.temperature = temperature
+
+    def to_bytes(self) -> bytes:
+        """将浮点数温度打包为4字节（小端）。"""
+        return struct.pack("<f", self.temperature)
+
+    @staticmethod
+    def from_bytes(command_code: CommandCode, data: bytes) -> "TemperatureMessage":
+        """从字节串反序列化温度浮点数。"""
+        if len(data) != 4:
+            raise ValueError("TemperatureMessage数据长度无效。")
+        temperature = struct.unpack("<f", data)[0]
+        return TemperatureMessage(temperature)
+
+    def __repr__(self) -> str:
+        return f"TemperatureMessage(temperature={self.temperature:.2f}°C, command_code={self.command_code.name})"
+
+
+class ErrorMessage(ProtocolMessage):
+    """包含错误码的应用层消息。"""
+
+    def __init__(self, error_code: int):
+        super().__init__(CommandCode.ERROR_REPORT)
+        self.error_code = error_code
+
+    def to_bytes(self) -> bytes:
+        """将错误码转换为1字节。"""
+        return self.error_code.to_bytes(1, "little")
+
+    @staticmethod
+    def from_bytes(command_code: CommandCode, data: bytes) -> "ErrorMessage":
+        """从字节串反序列化错误码。"""
+        if not data or len(data) != 1:
+            raise ValueError("ErrorMessage数据无效。")
+        error_code = data[0]
+        return ErrorMessage(error_code)
+
+    def __repr__(self) -> str:
+        return f"ErrorMessage(error_code={self.error_code}, command_code={self.command_code.name})"
+
+
+# 消息映射表：将(消息类型, 命令代码)映射到 ProtocolMessage 的 from_bytes 静态方法
+# 用于反序列化接收到的数据包中的负载。
+MESSAGE_MAPPINGS: Dict[
+    Tuple[MessageType, CommandCode], Callable[[CommandCode, bytes], ProtocolMessage]
+] = {
+    (MessageType.ACK, CommandCode.NONE): GenericAckNackMessage.from_bytes,
+    (
+        MessageType.NACK,
+        CommandCode.ERROR_REPORT,
+    ): ErrorMessage.from_bytes,  # NACK with error report
+    (
+        MessageType.NACK,
+        CommandCode.NONE,
+    ): GenericAckNackMessage.from_bytes,  # NACK without specific error code payload
+    (MessageType.COMMAND, CommandCode.SET_LED_STATE): LedControlMessage.from_bytes,
+    (
+        MessageType.RESPONSE,
+        CommandCode.SET_LED_STATE,
+    ): GenericAckNackMessage.from_bytes,  # 设置LED后的响应通常是ACK
+    (
+        MessageType.COMMAND,
+        CommandCode.GET_TEMPERATURE,
+    ): GenericAckNackMessage.from_bytes,  # 请求温度时没有负载
+    (MessageType.RESPONSE, CommandCode.GET_TEMPERATURE): TemperatureMessage.from_bytes,
+    (MessageType.COMMAND, CommandCode.STATUS_REQUEST): GenericAckNackMessage.from_bytes,
+    (
+        MessageType.RESPONSE,
+        CommandCode.STATUS_REPORT,
+    ): GenericAckNackMessage.from_bytes,  # 可以是更详细的状态消息
+    (MessageType.HEARTBEAT_REQ, CommandCode.NONE): GenericAckNackMessage.from_bytes,
+    (MessageType.HEARTBEAT_RESP, CommandCode.NONE): GenericAckNackMessage.from_bytes,
+}
+
+
+# --- protocol.py ---
+class Packet:
+    """
+    表示单个通信协议数据包。
+    数据包结构:
+    起始标志 (2 字节) | 负载长度 (2 字节) | 序列号 (2 字节) | 消息类型 (1 字节) | 命令代码 (1 字节) | 数据负载 (N 字节) | 校验和 (2 字节) | 结束标志 (2 字节)
+    """
+
+    START_FLAG = b"\xaa\x55"
+    END_FLAG = b"\x55\xaa"
+    # 头部长度 = 起始标志(2) + 负载长度(2) + 序列号(2) + 消息类型(1) + 命令代码(1) = 8字节
+    HEADER_LEN = len(START_FLAG) + 2 + 2 + 1 + 1
+    # 尾部长度 = 校验和(2) + 结束标志(2) = 4字节
+    FOOTER_LEN = 2 + len(END_FLAG)
+    # 最小数据包长度 (空负载) = 头部长度 + 尾部长度 = 12字节
+    MIN_PACKET_LEN = HEADER_LEN + FOOTER_LEN
+
+    def __init__(
+        self,
+        sequence_num: int,
+        msg_type: MessageType,
+        command_code: CommandCode,
+        payload: bytes = b"",
+    ):
+        """
+        初始化数据包。
+        Args:
+            sequence_num (int): 序列号 (0-65535)。
+            msg_type (MessageType): 消息类型。
+            command_code (CommandCode): 命令代码。
+            payload (bytes): 数据负载。
+        """
+        if not isinstance(sequence_num, int) or not (0 <= sequence_num <= 0xFFFF):
+            raise ValueError("序列号必须是16位无符号整数 (0-65535)。")
+        if not isinstance(msg_type, MessageType):
+            raise ValueError("msg_type 必须是 MessageType 枚举。")
+        if not isinstance(command_code, CommandCode):
+            raise ValueError("command_code 必须是 CommandCode 枚举。")
+        if not isinstance(payload, bytes):
+            raise ValueError("Payload 必须是字节串。")
+
+        self.sequence_num = sequence_num
+        self.msg_type = msg_type
+        self.command_code = command_code
+        self.payload = payload
+        self.length = len(payload)  # 仅负载长度
+        self.checksum = 0  # 将在序列化时计算
+
+    def calculate_checksum(self) -> int:
+        """
+        计算数据包内容的CRC16校验码。
+        校验和覆盖：负载长度 + 序列号 + 消息类型 + 命令代码 + 负载。
+        """
+        data_to_crc = (
+            struct.pack("<H", self.length)
+            + struct.pack("<H", self.sequence_num)
+            + self.msg_type.to_bytes(1, "little")
+            + self.command_code.to_bytes(1, "little")
+            + self.payload
+        )
+        return crc16_ccitt(data_to_crc)
+
+    def __repr__(self) -> str:
+        """返回数据包的字符串表示形式。"""
+        return (
+            f"Packet(seq={self.sequence_num}, msg_type={self.msg_type.name}, "
+            f"cmd_code={self.command_code.name}, len={self.length}, "
+            f"payload_hex={self.payload.hex() if self.payload else 'None'})"
+        )
+
+
+class PacketSerializer:
+    """将 Packet 对象序列化为字节流。"""
+
+    @staticmethod
+    def serialize(packet: Packet) -> bytes:
+        """
+        将 Packet 对象序列化为可用于传输的字节流。
+        格式: START_FLAG (2) | LENGTH (2) | SEQ_NUM (2) | MSG_TYPE (1) | CMD_CODE (1) | PAYLOAD (N) | CHECKSUM (2) | END_FLAG (2)
+        """
+        # 在打包前计算校验和
+        packet.checksum = packet.calculate_checksum()
+
+        # 打包头部：负载长度(H), 序列号(H), 消息类型(B), 命令代码(B)
+        header_data = struct.pack(
+            "<HHBB",
+            packet.length,
+            packet.sequence_num,
+            packet.msg_type.value,
+            packet.command_code.value,
+        )
+
+        # 组装完整的数据包字节串
+        full_packet_bytes = (
+            Packet.START_FLAG
+            + header_data
+            + packet.payload
+            + struct.pack("<H", packet.checksum)
+            + Packet.END_FLAG
+        )
+        return full_packet_bytes
+
+
+class PacketDeserializer:
+    """将字节流反序列化为 Packet 对象。"""
+
+    def __init__(self):
+        self._buffer = b""  # 内部缓冲区，用于存储不完整的数据
+
+    def deserialize(self, new_data: bytes) -> List[Packet]:
+        """
+        向内部缓冲区添加新数据，并尝试解析完整的Pacekt。
+        Args:
+            new_data (bytes): 新接收到的字节数据。
+        Returns:
+            List[Packet]: 成功解析的数据包列表。
+        """
+        self._buffer += new_data
+        parsed_packets: List[Packet] = []
+        bytes_processed = 0
+
+        while True:
+            # 步骤 1: 查找起始标志
+            start_index = self._buffer.find(Packet.START_FLAG, bytes_processed)
+            if start_index == -1:
+                # 未找到起始标志，清除已处理的字节并退出
+                self._buffer = self._buffer[bytes_processed:]
+                break
+
+            # 如果起始标志不在缓冲区开头，则丢弃前面的垃圾数据
+            if start_index > bytes_processed:
+                self._buffer = self._buffer[start_index:]
+                bytes_processed = 0  # 重置已处理字节，因为缓冲区已更新
+                start_index = 0  # 现在起始标志位于新缓冲区的0索引
+
+            # 检查是否有足够的字节来构成一个空数据包的固定部分（头部+校验和+结束标志）
+            if len(self._buffer) < start_index + Packet.MIN_PACKET_LEN:
+                # 数据不足，等待更多数据
+                break
+
+            # 步骤 2: 读取头部 (负载长度, 序列号, 消息类型, 命令代码)
+            try:
+                header_offset = start_index + len(Packet.START_FLAG)
+                # Packet.HEADER_LEN 包含了 START_FLAG 的长度，所以这里要减去它
+                length, sequence_num, msg_type_val, command_code_val = struct.unpack(
+                    "<HHBB",
+                    self._buffer[
+                        header_offset : header_offset
+                        + Packet.HEADER_LEN
+                        - len(Packet.START_FLAG)
+                    ],
+                )
+            except struct.error:
+                # 头部格式错误，丢弃当前起始标志并尝试查找下一个
+                print(
+                    f"DEBUG: Malformed header detected at index {start_index}. Skipping 1 byte."
+                )
+                bytes_processed += (
+                    len(Packet.START_FLAG) + 1
+                )  # 跳过当前可能的坏起始标志
+                continue
+
+            # 计算预期的数据包总长度
+            expected_total_len = Packet.HEADER_LEN + length + Packet.FOOTER_LEN
+            if expected_total_len < Packet.MIN_PACKET_LEN:  # 长度异常，可能是数据损坏
+                print(
+                    f"DEBUG: Abnormal packet length {expected_total_len} detected. Skipping 1 byte."
+                )
+                bytes_processed += (
+                    len(Packet.START_FLAG) + 1
+                )  # 可能长度字段被破坏，跳过
+                continue
+
+            # 步骤 3: 检查缓冲区中是否包含完整数据包
+            if len(self._buffer) < start_index + expected_total_len:
+                # 数据不足，等待更多数据
+                break
+
+            # 提取完整的数据包数据
+            packet_raw_data = self._buffer[
+                start_index : start_index + expected_total_len
+            ]
+
+            # 步骤 4: 提取负载、校验和、结束标志
+            payload_start_idx = start_index + Packet.HEADER_LEN
+            payload_end_idx = payload_start_idx + length
+            payload = self._buffer[payload_start_idx:payload_end_idx]
+
+            checksum_start_idx = payload_end_idx
+            checksum_val = struct.unpack(
+                "<H", self._buffer[checksum_start_idx : checksum_start_idx + 2]
+            )[0]
+
+            end_flag_start_idx = checksum_start_idx + 2
+            end_flag = self._buffer[
+                end_flag_start_idx : end_flag_start_idx + len(Packet.END_FLAG)
+            ]
+
+            # 步骤 5: 验证结束标志
+            if end_flag != Packet.END_FLAG:
+                # 结束标志无效，丢弃此数据包并继续搜索
+                print(
+                    f"DEBUG: Invalid END_FLAG detected for packet at index {start_index}. Skipping 1 byte."
+                )
+                bytes_processed += (
+                    len(Packet.START_FLAG) + 1
+                )  # 跳过当前数据包，继续查找
+                continue
+
+            # 步骤 6: 创建临时数据包以计算CRC
+            try:
+                msg_type = MessageType(msg_type_val)
+                command_code = CommandCode(command_code_val)
+            except ValueError:
+                print(
+                    f"DEBUG: Unknown MessageType or CommandCode detected: MsgType={msg_type_val}, CmdCode={command_code_val}. Skipping 1 byte."
+                )
+                bytes_processed += len(Packet.START_FLAG) + 1
+                continue
+
+            temp_packet = Packet(sequence_num, msg_type, command_code, payload)
+            calculated_checksum = temp_packet.calculate_checksum()
+
+            # 步骤 7: 验证校验和
+            if calculated_checksum != checksum_val:
+                # CRC不匹配，丢弃数据包
+                print(
+                    f"DEBUG: CRC mismatch. Received: {checksum_val:04X}, Calculated: {calculated_checksum:04X} for packet: {temp_packet}"
+                )
+                bytes_processed += expected_total_len  # 跳过损坏的数据包
+            else:
+                # 数据包有效，添加到列表
+                parsed_packets.append(temp_packet)
+                bytes_processed += expected_total_len  # 跳过已成功解析的数据包
+
+        # 清理缓冲区：移除所有已处理的字节
+        self._buffer = self._buffer[bytes_processed:]
+        return parsed_packets
+
+
+# --- interfaces.py ---
+class CommunicationInterface(ABC):
+    """通信接口的抽象基类。"""
+
+    def __init__(self):
+        self._is_connected = False
+        self._send_lock = threading.Lock()  # 保护发送操作的线程安全
+
+    @abstractmethod
+    def connect(self) -> None:
+        """建立通信连接。"""
+        pass
+
+    @abstractmethod
+    def disconnect(self) -> None:
+        """关闭通信连接。"""
+        pass
+
+    @property
+    def is_connected(self) -> bool:
+        """返回接口是否连接。"""
+        return self._is_connected
+
+    @abstractmethod
+    def _send_raw(self, data: bytes) -> None:
+        """
+        通过通信介质发送原始字节。
+        这是一个内部方法，由 ProtocolHandler 的发送方法调用。
+        """
+        pass
+
+    @abstractmethod
+    def receive_raw(self) -> bytes:
+        """
+        从通信介质接收原始字节。
+        此方法应是非阻塞的或具有短超时。
+        返回接收到的字节，如果没有数据则返回空字节串。
+        """
+        pass
+
+    def send(self, data: bytes) -> None:
+        """公共发送方法，带锁以确保线程安全。"""
+        if not self.is_connected:
+            raise CommunicationError("接口未连接，无法发送数据。")
+        with self._send_lock:
+            self._send_raw(data)
+
+
+# 模拟通信接口实现，用于测试和示例
+class MockCommunicationInterface(CommunicationInterface):
+    """
+    一个模拟通信接口，用于在没有实际硬件的情况下进行测试。
+    它使用内部队列来模拟数据传输。
+    """
+
+    def __init__(self, name: str = "Mock"):
+        super().__init__()
+        self.name = name
+        self._tx_queue = queue.Queue()  # 发送队列
+        self._rx_queue = queue.Queue()  # 接收队列
+        print(f"{self.name}MockCommunicationInterface: 已初始化。")
+
+    def connect(self) -> None:
+        """模拟连接操作。"""
+        if self._is_connected:
+            print(f"{self.name}MockCommunicationInterface: 已连接。")
+            return
+        self._is_connected = True
+        print(f"{self.name}MockCommunicationInterface: 已连接。")
+
+    def disconnect(self) -> None:
+        """模拟断开连接操作。"""
+        if self._is_connected:
+            self._is_connected = False
+            # 清空队列
+            while not self._tx_queue.empty():
+                self._tx_queue.get_nowait()
+            while not self._rx_queue.empty():
+                self._rx_queue.get_nowait()
+            print(f"{self.name}MockCommunicationInterface: 已断开连接。")
+
+    def _send_raw(self, data: bytes) -> None:
+        """模拟发送原始字节，将数据放入发送队列。"""
+        if not self._is_connected:
+            raise CommunicationError(f"{self.name}Mock接口未打开，无法发送。")
+        # print(f"DEBUG ({self.name}): Sending raw: {data.hex()}")
+        self._tx_queue.put(data)
+
+    def receive_raw(self) -> bytes:
+        """模拟接收原始字节，从接收队列获取数据。"""
+        if not self._is_connected:
+            return b""
+        try:
+            # get_nowait() 是非阻塞的
+            data = self._rx_queue.get_nowait()
+            # print(f"DEBUG ({self.name}): Received raw: {data.hex()}")
+            return data
+        except queue.Empty:
+            return b""  # 没有数据可用
+
+    # 外部方法，用于将数据注入到此模拟接口的接收队列
+    def inject_received_data(self, data: bytes) -> None:
+        """将数据注入到此模拟接口的接收队列，模拟从外部接收数据。"""
+        self._rx_queue.put(data)
+
+    # 外部方法，用于从发送队列获取数据（模拟被另一个设备接收）
+    def get_sent_data(self) -> bytes:
+        """从发送队列获取数据，模拟另一个设备从该接口接收数据。"""
+        try:
+            return self._tx_queue.get_nowait()
+        except queue.Empty:
+            return b""
+
+
+# 实际的接口实现 (需要安装相关库)
+# try:
+#     import serial
+#     import serial.tools.list_ports
+#     class SerialInterface(CommunicationInterface):
+#         # ... (实现细节如上所示) ...
+# except ImportError:
+#     print("Warning: pyserial未安装。SerialInterface不可用。")
+#     class SerialInterface(CommunicationInterface):
+#         def __init__(self, port: str, baudrate: int, timeout: float = 0.05): super().__init__()
+#         def connect(self) -> None: raise NotImplementedError("pyserial未安装。")
+#         def disconnect(self) -> None: pass
+#         def _send_raw(self, data: bytes) -> None: pass
+#         def receive_raw(self) -> bytes: return b''
+
+# import socket
+# class TcpClientInterface(CommunicationInterface):
+#     # ... (实现细节如上所示) ...
+# class UdpInterface(CommunicationInterface):
+#     # ... (实现细节如上所示) ...
+
+
+# --- core.py ---
+class ProtocolHandler:
+    """
+    通过通用通信接口管理应用层消息的发送和接收。
+    实现了可靠性特性，如重传和心跳。
+    """
+
+    def __init__(
+        self,
+        interface: CommunicationInterface,
+        retransmit_attempts: int = 3,
+        retransmit_timeout: float = 1.0,
+        heartbeat_interval: float = 5.0,
+    ):
+        """
+        初始化协议处理器。
+        Args:
+            interface (CommunicationInterface): 要使用的底层通信接口。
+            retransmit_attempts (int): 消息重传尝试次数。
+            retransmit_timeout (float): 重传超时时间（秒）。
+            heartbeat_interval (float): 心跳发送间隔（秒）。
+        """
+        self.interface = interface
+        self.retransmit_attempts = retransmit_attempts
+        self.retransmit_timeout = retransmit_timeout
+        self.heartbeat_interval = heartbeat_interval
+
+        self._sequence_num_counter = 0  # 序列号计数器
+        self._packet_serializer = PacketSerializer()
+        self._packet_deserializer = PacketDeserializer()
+
+        # 线程和同步机制
+        self._listen_thread: Optional[threading.Thread] = None
+        self._listen_thread_running = threading.Event()  # 控制监听线程运行的标志
+        self._buffer_lock = threading.Lock()  # 保护反序列化器的内部缓冲区
+
+        # 用于处理阻塞式发送/接收与重传
+        # 存储等待响应的序列号及其对应的事件，用于通知发送线程
+        self._pending_responses: Dict[int, threading.Event] = {}
+        # 存储接收到的响应数据包
+        self._received_responses: Dict[int, Packet] = {}
+
+        # 注册的回调函数，用于处理接收到的应用层消息
+        self._callbacks: Dict[
+            Tuple[MessageType, CommandCode],
+            List[Callable[[ProtocolMessage, Packet], None]],
+        ] = {}
+
+        # 心跳相关
+        self._last_heartbeat_sent_time = time.time()
+        self._last_heartbeat_received_time = time.time()
+        self._heartbeat_monitoring_thread: Optional[threading.Thread] = None
+        self._heartbeat_monitoring_running = (
+            threading.Event()
+        )  # 控制心跳监控线程运行的标志
+
+        print("ProtocolHandler: 已初始化。")
+
+    def connect(self) -> None:
+        """连接底层通信接口并启动监听和心跳线程。"""
+        self.interface.connect()
+        self.start_listening()
+        self.start_heartbeat_monitoring()
+
+    def disconnect(self) -> None:
+        """断开底层通信接口并停止监听和心跳线程。"""
+        self.stop_heartbeat_monitoring()
+        self.stop_listening()
+        self.interface.disconnect()
+
+    def _get_next_sequence_num(self) -> int:
+        """获取下一个序列号，并递增计数器（在0xFFFF处循环）。"""
+        with threading.Lock():  # 保护共享计数器的访问
+            seq = self._sequence_num_counter
+            self._sequence_num_counter = (self._sequence_num_counter + 1) % 0x10000
+            return seq
+
+    def register_callback(
+        self,
+        msg_type: MessageType,
+        command_code: CommandCode,
+        callback: Callable[[ProtocolMessage, Packet], None],
+    ) -> None:
+        """
+        为特定的消息类型和命令代码注册回调函数。
+        Args:
+            msg_type (MessageType): 消息类型。
+            command_code (CommandCode): 命令代码。
+            callback (Callable): 当收到匹配的消息时调用的函数。
+                                  函数签名: `callback(app_message: ProtocolMessage, raw_packet: Packet)`。
+        """
+        key = (msg_type, command_code)
+        if key not in self._callbacks:
+            self._callbacks[key] = []
+        self._callbacks[key].append(callback)
+        print(f"ProtocolHandler: 已为 {msg_type.name}/{command_code.name} 注册回调。")
+
+    def send_message(
+        self,
+        message: ProtocolMessage,
+        msg_type: MessageType,
+        command_code: CommandCode,
+        expect_response: bool = True,
+    ) -> Optional[ProtocolMessage]:
+        """
+        发送应用层消息，并根据需要等待响应（带重传机制）。
+
+        Args:
+            message (ProtocolMessage): 应用层消息对象。
+            msg_type (MessageType): 消息类型（例如：COMMAND, RESPONSE）。
+            command_code (CommandCode): 特定命令代码。
+            expect_response (bool): 如果为True，此方法将阻塞并等待ACK/响应。
+
+        Returns:
+            Optional[ProtocolMessage]: 如果 expect_response 为 True 且成功，则返回接收到的 ProtocolMessage 响应；
+                                       否则返回 None。
+        Raises:
+            TimeoutError: 如果在多次重传后未收到响应。
+            InvalidPacketError: 如果接收到格式错误或CRC不正确的数据包。
+            CommunicationError: 如果底层接口出现问题。
+        """
+        if not self.interface.is_connected:
+            raise CommunicationError("无法发送消息：接口未连接。")
+
+        payload_bytes = message.to_bytes()
+        seq_num = self._get_next_sequence_num()
+
+        packet_to_send = Packet(seq_num, msg_type, command_code, payload_bytes)
+        packet_bytes = self._packet_serializer.serialize(packet_to_send)
+        print(f"ProtocolHandler: 发送数据包: {packet_to_send}")
+        # print(f"  Raw bytes to send: {packet_bytes.hex()}")
+
+        if expect_response:
+            # 为当前序列号创建一个事件，用于等待响应
+            response_event = threading.Event()
+            self._pending_responses[seq_num] = response_event
+            response_packet: Optional[Packet] = None
+
+            attempts = 0
+            while attempts < self.retransmit_attempts:
+                attempts += 1
+                try:
+                    self.interface.send(packet_bytes)
+                    print(
+                        f"  尝试 {attempts}: 数据包已发送。等待响应 (Seq:{seq_num})..."
+                    )
+
+                    # 等待响应事件被设置，或超时
+                    if response_event.wait(timeout=self.retransmit_timeout):
+                        response_packet = self._received_responses.pop(seq_num, None)
+                        if response_packet:
+                            print(f"  收到 Seq:{seq_num} 的响应: {response_packet}")
+                            # 检查是否为 NACK
+                            if response_packet.msg_type == MessageType.NACK:
+                                error_msg = self._deserialize_protocol_message(
+                                    response_packet
+                                )
+                                if isinstance(error_msg, ErrorMessage):
+                                    raise ProtocolError(
+                                        f"收到 NACK，错误码: {error_msg.error_code}"
+                                    )
+                                else:
+                                    raise ProtocolError("收到 NACK，但错误格式未知。")
+                            # 检查是否为预期的响应类型 (ACK 或针对 COMMAND 的 RESPONSE)
+                            if response_packet.msg_type == MessageType.ACK or (
+                                msg_type == MessageType.COMMAND
+                                and response_packet.msg_type == MessageType.RESPONSE
+                                and response_packet.command_code == command_code
+                            ):
+                                return self._deserialize_protocol_message(
+                                    response_packet
+                                )
+                            else:
+                                print(
+                                    f"警告: 收到非预期的消息类型 {response_packet.msg_type.name} 作为对 Seq:{seq_num} 的响应。"
+                                )
+                                # 尝试不足，继续重试
+                        else:
+                            print(
+                                f"警告: Seq:{seq_num} 的事件已设置，但未找到响应数据包。"
+                            )
+                        # 如果到达此处，表示未收到正确响应或数据包丢失，继续重试
+                    else:
+                        print(f"  等待 Seq:{seq_num} 响应超时。重试...")
+
+                except (CommunicationError, InvalidPacketError) as e:
+                    print(f"  发送/接收过程中出现通信/无效数据包错误: {e}。重试...")
+                    time.sleep(0.1)  # 重试前稍作延迟
+                finally:
+                    # 如果事件仍然在 pending_responses 中并且未设置（例如，超时），则清理
+                    if (
+                        seq_num in self._pending_responses
+                        and not response_event.is_set()
+                    ):
+                        del self._pending_responses[seq_num]
+
+            # 达到最大重传次数，仍然未收到响应
+            if seq_num in self._pending_responses:  # 最终清理
+                del self._pending_responses[seq_num]
+            raise TimeoutError(
+                f"在 {self.retransmit_attempts} 次尝试后，未收到 Seq:{seq_num} 的响应。"
+            )
+        else:
+            # 不期望响应，只发送一次
+            try:
+                self.interface.send(packet_bytes)
+                return None
+            except CommunicationError as e:
+                raise CommunicationError(f"发送消息失败: {e}")
+
+    def _listen_thread_main(self) -> None:
+        """接收线程的主循环。持续从接口读取数据并解析数据包。"""
+        print("ProtocolHandler: 监听线程已启动。")
+        self._listen_thread_running.set()  # 设置标志以指示线程正在运行
+
+        while self._listen_thread_running.is_set():
+            try:
+                raw_data = self.interface.receive_raw()
+                if raw_data:
+                    # print(f"DEBUG: 收到原始数据: {raw_data.hex()}")
+                    with self._buffer_lock:  # 保护缓冲区访问
+                        parsed_packets = self._packet_deserializer.deserialize(raw_data)
+
+                    for packet in parsed_packets:
+                        self._handle_incoming_packet(packet)
+                else:
+                    time.sleep(0.01)  # 小暂停，防止忙等待
+            except CommunicationError as e:
+                print(f"ProtocolHandler: 监听线程中发生通信错误: {e}。线程将停止。")
+                self._listen_thread_running.clear()  # 关键通信错误时停止线程
+            except Exception as e:
+                print(f"ProtocolHandler: 监听线程中发生未处理异常: {e}")
+                time.sleep(0.1)  # 出现异常时暂停一下，避免CPU过载
+
+        print("ProtocolHandler: 监听线程已停止。")
+
+    def start_listening(self) -> None:
+        """启动后台线程，持续接收和处理数据包。"""
+        if self._listen_thread and self._listen_thread.is_alive():
+            print("ProtocolHandler: 监听器已在运行。")
+            return
+        self._listen_thread_running.set()
+        self._listen_thread = threading.Thread(
+            target=self._listen_thread_main, daemon=True
+        )
+        self._listen_thread.start()
+
+    def stop_listening(self) -> None:
+        """停止后台监听线程。"""
+        if self._listen_thread and self._listen_thread.is_alive():
+            self._listen_thread_running.clear()
+            self._listen_thread.join(timeout=2)  # 等待线程结束
+            if self._listen_thread.is_alive():
+                print("警告: 监听线程未能优雅停止。")
+            self._listen_thread = None
+
+    def _deserialize_protocol_message(self, packet: Packet) -> ProtocolMessage:
+        """将数据包的负载反序列化为应用层 ProtocolMessage。"""
+        key = (packet.msg_type, packet.command_code)
+        deserializer_func = MESSAGE_MAPPINGS.get(key)
+
+        if deserializer_func:
+            try:
+                return deserializer_func(packet.command_code, packet.payload)
+            except (ValueError, TypeError) as e:
+                print(f"为 {key} 反序列化消息时出错: {e}")
+                raise InvalidPacketError(f"为 {key} 反序列化消息失败: {e}")
+        else:
+            print(f"未找到 {key} 的消息映射。返回通用消息。")
+            # 对于未知消息或空负载的通用消息
+            return GenericAckNackMessage(packet.command_code)
+
+    def _send_ack(self, original_seq_num: int) -> None:
+        """发送一个ACK包。"""
+        ack_packet = Packet(original_seq_num, MessageType.ACK, CommandCode.NONE)
+        ack_bytes = self._packet_serializer.serialize(ack_packet)
+        try:
+            self.interface.send(ack_bytes)
+            print(f"ProtocolHandler: 发送 ACK，序列号: {original_seq_num}")
+        except CommunicationError as e:
+            print(f"发送 ACK，序列号: {original_seq_num} 时出错: {e}")
+
+    def _send_nack(self, original_seq_num: int, error_code: int) -> None:
+        """发送一个带有错误码的NACK包。"""
+        error_message = ErrorMessage(error_code)
+        nack_packet = Packet(
+            original_seq_num,
+            MessageType.NACK,
+            CommandCode.ERROR_REPORT,
+            error_message.to_bytes(),
+        )
+        nack_bytes = self._packet_serializer.serialize(nack_packet)
+        try:
+            self.interface.send(nack_bytes)
+            print(
+                f"ProtocolHandler: 发送 NACK (错误:{error_code})，序列号: {original_seq_num}"
+            )
+        except CommunicationError as e:
+            print(f"发送 NACK，序列号: {original_seq_num} 时出错: {e}")
+
+    def _handle_incoming_packet(self, packet: Packet) -> None:
+        """处理单个传入数据包。"""
+        print(f"ProtocolHandler: 正在处理传入数据包: {packet}")
+
+        # 1. 检查它是否是对等待请求的响应 (ACK/NACK 或特定响应)
+        if packet.sequence_num in self._pending_responses:
+            event = self._pending_responses.get(packet.sequence_num)
+            if event:  # Ensure event still exists
+                # 存储数据包并通知等待的发送线程
+                self._received_responses[packet.sequence_num] = packet
+                event.set()
+            return  # 已作为响应处理
+
+        # 2. 处理心跳请求/响应
+        if packet.msg_type == MessageType.HEARTBEAT_REQ:
+            print("ProtocolHandler: 收到心跳请求。发送响应。")
+            self._send_heartbeat_response(packet.sequence_num)
+            self._last_heartbeat_received_time = time.time()
+            return
+        elif packet.msg_type == MessageType.HEARTBEAT_RESP:
+            print("ProtocolHandler: 收到心跳响应。")
+            self._last_heartbeat_received_time = time.time()
+            return
+
+        # 3. 如果是需要ACK的命令，发送ACK
+        # 这是一个简化逻辑。在实际系统中，可能先处理命令，然后根据命令执行结果发送ACK/NACK。
+        # 目前，如果数据包结构有效且未被处理，就发送ACK。
+        if packet.msg_type == MessageType.COMMAND:
+            print(f"ProtocolHandler: 收到命令 (Seq:{packet.sequence_num})。发送 ACK。")
+            self._send_ack(packet.sequence_num)
+
+        # 4. 分发到已注册的回调（用于命令或未请求的响应/事件）
+        key = (packet.msg_type, packet.command_code)
+        if key in self._callbacks:
+            try:
+                app_message = self._deserialize_protocol_message(packet)
+                for callback in self._callbacks[key]:
+                    # 回调函数在监听线程中运行。注意避免阻塞操作。
+                    # 对于复杂处理，考虑将消息放入队列中供工作线程处理。
+                    print(f"ProtocolHandler: 调用回调处理消息: {app_message}")
+                    callback(app_message, packet)
+            except InvalidPacketError:
+                # 如果消息负载无法反序列化，发送NACK。
+                print(
+                    f"ProtocolHandler: 无法反序列化消息，发送NACK (Seq:{packet.sequence_num}, 错误:0x01)。"
+                )
+                self._send_nack(packet.sequence_num, 0x01)  # 0x01: 无效负载
+        else:
+            print(f"ProtocolHandler: 未找到 {key} 的回调。数据包被忽略。")
+            # 如果是未处理的命令，发送NACK表示未知命令
+            if packet.msg_type == MessageType.COMMAND:
+                self._send_nack(packet.sequence_num, 0x02)  # 0x02: 未知命令
+
+    def _send_heartbeat_request(self) -> None:
+        """发送心跳请求。"""
+        heartbeat_msg = GenericAckNackMessage()  # 不需要特定负载
+        try:
+            # 心跳通常不需要阻塞式ACK，但协议处理器仍会处理返回的响应包。
+            self.send_message(
+                heartbeat_msg,
+                MessageType.HEARTBEAT_REQ,
+                CommandCode.NONE,
+                expect_response=False,
+            )
+            self._last_heartbeat_sent_time = time.time()
+        except CommunicationError as e:
+            print(f"发送心跳请求出错: {e}")
+
+    def _send_heartbeat_response(self, original_seq_num: int) -> None:
+        """发送心跳响应。"""
+        heartbeat_resp_msg = GenericAckNackMessage()
+        try:
+            # 心跳响应也不需要阻塞式ACK
+            self.send_message(
+                heartbeat_resp_msg,
+                MessageType.HEARTBEAT_RESP,
+                CommandCode.NONE,
+                expect_response=False,
+            )
+        except CommunicationError as e:
+            print(f"发送心跳响应出错: {e}")
+
+    def _heartbeat_monitoring_main(self) -> None:
+        """通过发送心跳和检查响应来监控连接健康状态。"""
+        print("ProtocolHandler: 心跳监控线程已启动。")
+        self._heartbeat_monitoring_running.set()
+
+        while self._heartbeat_monitoring_running.is_set():
+            current_time = time.time()
+            # 定期发送心跳请求
+            if current_time - self._last_heartbeat_sent_time > self.heartbeat_interval:
+                if self.interface.is_connected:
+                    self._send_heartbeat_request()
+                else:
+                    print("心跳监控: 接口未连接，跳过心跳请求。")
+
+            # 检查上次收到心跳响应的时间是否过久
+            if (
+                current_time - self._last_heartbeat_received_time
+                > self.heartbeat_interval * 3
+            ):  # 3倍间隔作为阈值
+                if self.interface.is_connected:
+                    print(
+                        f"警告: 超过 {current_time - self._last_heartbeat_received_time:.2f} 秒未收到心跳响应。连接可能已丢失。"
+                    )
+                    # 可选：在此处触发重连逻辑或发出事件/回调
+            time.sleep(1)  # 每秒检查一次
+
+        print("ProtocolHandler: 心跳监控线程已停止。")
+
+    def start_heartbeat_monitoring(self) -> None:
+        """启动后台心跳监控线程。"""
+        if (
+            self._heartbeat_monitoring_thread
+            and self._heartbeat_monitoring_thread.is_alive()
+        ):
+            print("ProtocolHandler: 心跳监控器已在运行。")
+            return
+        self._heartbeat_monitoring_running.set()
+        self._heartbeat_monitoring_thread = threading.Thread(
+            target=self._heartbeat_monitoring_main, daemon=True
+        )
+        self._heartbeat_monitoring_thread.start()
+
+    def stop_heartbeat_monitoring(self) -> None:
+        """停止后台心跳监控线程。"""
+        if (
+            self._heartbeat_monitoring_thread
+            and self._heartbeat_monitoring_thread.is_alive()
+        ):
+            self._heartbeat_monitoring_running.clear()
+            self._heartbeat_monitoring_thread.join(timeout=2)
+            if self._heartbeat_monitoring_thread.is_alive():
+                print("警告: 心跳监控线程未能优雅停止。")
+            self._heartbeat_monitoring_thread = None
+
+
+# --- 示例使用 (在单独的逻辑中) ---
+if __name__ == "__main__":
+    print("--- 启动协议通信模拟 ---")
+
+    # 创建两个模拟设备 (上位机和下位机)
+    # 它们将通过互相注入数据来模拟通信
+    master_interface = MockCommunicationInterface(name="Master")
+    slave_interface = MockCommunicationInterface(name="Slave")
+
+    # 创建协议处理器实例
+    master_protocol = ProtocolHandler(
+        master_interface,
+        retransmit_attempts=3,
+        retransmit_timeout=0.5,
+        heartbeat_interval=3.0,
+    )
+    slave_protocol = ProtocolHandler(
+        slave_interface,
+        retransmit_attempts=3,
+        retransmit_timeout=0.5,
+        heartbeat_interval=3.0,
+    )
+
+    # 上位机 (Master) 定义的回调函数
+    def master_handle_temperature_response(
+        message: ProtocolMessage, raw_packet: Packet
+    ):
+        if isinstance(message, TemperatureMessage):
+            print(
+                f"\n[Master Callback] 收到温度报告: {message.temperature:.2f}°C (原始序列号: {raw_packet.sequence_num})\n"
+            )
+        else:
+            print(
+                f"\n[Master Callback] 收到非预期的温度响应类型: {type(message).__name__}\n"
+            )
+
+    def master_handle_slave_status(message: ProtocolMessage, raw_packet: Packet):
+        print(
+            f"\n[Master Callback] 收到下位机状态报告 (Seq:{raw_packet.sequence_num})\n"
+        )
+
+    # 下位机 (Slave) 定义的回调函数
+    def slave_handle_led_command(message: ProtocolMessage, raw_packet: Packet):
+        if isinstance(message, LedControlMessage):
+            print(
+                f"\n[Slave Callback] 收到LED控制命令: 设置为 {'开' if message.state else '关'} (原始序列号: {raw_packet.sequence_num})\n"
+            )
+            # 模拟处理后，下位机通常会发送一个响应 (这里由 ProtocolHandler 自动发送 ACK)
+        else:
+            print(
+                f"\n[Slave Callback] 收到非预期的LED命令类型: {type(message).__name__}\n"
+            )
+
+    def slave_handle_get_temperature_command(
+        message: ProtocolMessage, raw_packet: Packet
+    ):
+        print(
+            f"\n[Slave Callback] 收到获取温度命令 (原始序列号: {raw_packet.sequence_num})\n"
+        )
+        # 模拟读取温度
+        current_temp = 25.5
+        temp_response = TemperatureMessage(current_temp)
+        print(f"[Slave] 回复温度: {current_temp}°C (Seq:{raw_packet.sequence_num})")
+        # 下位机发送响应，注意这里的 expect_response=False 因为是对一个已接收命令的响应
+        # 此时的序列号应与原始请求的序列号一致，由 ProtocolHandler 内部处理
+        slave_protocol.send_message(
+            temp_response,
+            MessageType.RESPONSE,
+            CommandCode.GET_TEMPERATURE,
+            expect_response=False,
+        )
+
+    # 注册回调
+    master_protocol.register_callback(
+        MessageType.RESPONSE,
+        CommandCode.GET_TEMPERATURE,
+        master_handle_temperature_response,
+    )
+    master_protocol.register_callback(
+        MessageType.RESPONSE, CommandCode.STATUS_REPORT, master_handle_slave_status
+    )
+
+    slave_protocol.register_callback(
+        MessageType.COMMAND, CommandCode.SET_LED_STATE, slave_handle_led_command
+    )
+    slave_protocol.register_callback(
+        MessageType.COMMAND,
+        CommandCode.GET_TEMPERATURE,
+        slave_handle_get_temperature_command,
+    )
+
+    try:
+        # 连接接口和启动协议处理器
+        master_protocol.connect()
+        slave_protocol.connect()
+
+        # 模拟通信循环
+        for _ in range(30):  # 运行一段时间
+            # --- 模拟数据流动 ---
+            # Master发送数据到 Slave
+            master_data_to_send = master_interface.get_sent_data()
+            if master_data_to_send:
+                slave_interface.inject_received_data(master_data_to_send)
+
+            # Slave发送数据到 Master
+            slave_data_to_send = slave_interface.get_sent_data()
+            if slave_data_to_send:
+                master_interface.inject_received_data(slave_data_to_send)
+            # --- 模拟数据流动结束 ---
+
+            # 上位机发送命令
+            if _ == 2:
+                print("\n--- Master 发送 SET_LED_STATE 命令 (开启) ---")
+                led_cmd = LedControlMessage(True)
+                try:
+                    response = master_protocol.send_message(
+                        led_cmd, MessageType.COMMAND, CommandCode.SET_LED_STATE
+                    )
+                    print(f"Master 收到 SET_LED_STATE 响应: {response}")
+                except (TimeoutError, ProtocolError, CommunicationError) as e:
+                    print(f"Master 发送 SET_LED_STATE 失败: {e}")
+
+            if _ == 5:
+                print("\n--- Master 发送 GET_TEMPERATURE 命令 ---")
+                get_temp_cmd = GenericAckNackMessage(CommandCode.GET_TEMPERATURE)
+                try:
+                    # 期望收到 TemperatureMessage
+                    temp_response = master_protocol.send_message(
+                        get_temp_cmd, MessageType.COMMAND, CommandCode.GET_TEMPERATURE
+                    )
+                    print(f"Master 收到 GET_TEMPERATURE 响应对象: {temp_response}")
+                    if isinstance(temp_response, TemperatureMessage):
+                        print(f"  温度值: {temp_response.temperature:.2f}°C")
+                except (TimeoutError, ProtocolError, CommunicationError) as e:
+                    print(f"Master 发送 GET_TEMPERATURE 失败: {e}")
+
+            if _ == 8:
+                print("\n--- Master 发送 SET_LED_STATE 命令 (关闭) ---")
+                led_cmd = LedControlMessage(False)
+                try:
+                    response = master_protocol.send_message(
+                        led_cmd, MessageType.COMMAND, CommandCode.SET_LED_STATE
+                    )
+                    print(f"Master 收到 SET_LED_STATE 响应: {response}")
+                except (TimeoutError, ProtocolError, CommunicationError) as e:
+                    print(f"Master 发送 SET_LED_STATE 失败: {e}")
+
+            if _ == 12:
+                print("\n--- Master 尝试发送一个未知命令，预期收到 NACK ---")
+                unknown_cmd = GenericAckNackMessage(
+                    CommandCode.SET_MOTOR_SPEED
+                )  # 未注册处理函数
+                try:
+                    response = master_protocol.send_message(
+                        unknown_cmd, MessageType.COMMAND, CommandCode.SET_MOTOR_SPEED
+                    )
+                    print(f"Master 收到未知命令的响应: {response}")
+                except (TimeoutError, ProtocolError, CommunicationError) as e:
+                    print(f"Master 发送未知命令失败 (预期 NACK): {e}")
+
+            time.sleep(1)  # 模拟时间流逝
+
+    except Exception as e:
+        print(f"主程序发生异常: {e}")
+    finally:
+        print("\n--- 停止协议通信模拟 ---")
+        master_protocol.disconnect()
+        slave_protocol.disconnect()
+        print("所有协议处理器和接口已关闭。")

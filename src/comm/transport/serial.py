@@ -5,6 +5,8 @@ import logging
 from threading import Thread
 from .transport import ITransport
 
+logger = logging.getLogger(__name__)
+
 
 class SerialTransport(ITransport):
 
@@ -15,88 +17,98 @@ class SerialTransport(ITransport):
         self.bytesize = 8
         self.stopbits = 1
         self.parity = "N"
-        self.serial = serial.Serial()
 
-        # self.read_thread.data_received.connect(self.data_received)
+        self._serial: serial.Serial = None
+        self._read_thread: Thread = None
+        self._is_running: bool = False
 
-    def connect(self) -> bool:
-        if self.serial.is_open:
-            logging.warning(f"串口 {self.port} 已经处于打开状态")
-            return True
-
-        self.serial.port = self.port
-        self.serial.baudrate = self.baudrate
-        self.serial.bytesize = self.bytesize
-        self.serial.stopbits = self.stopbits
-        self.serial.parity = self.parity
-
+    def open(self):
+        if self._serial and self._serial.is_open:
+            logger.warning(f"串口 {self.port} 已经处于打开状态")
+            return
         try:
-            self.serial.open()
-            self._connected = True
+            self._serial = serial.Serial(
+                port=self.port,
+                baudrate=self.baudrate,
+                bytesize=self.bytesize,
+                stopbits=self.stopbits,
+                parity=self.parity,
+            )
+            self._read_thread = Thread(target=self._receive_loop, daemon=True)
+            self._read_thread.start()
+            self._is_running = True
+            logger.info(f"打开串口 {self.port} 成功")
         except serial.SerialException as e:
-            logging.error(f"打开串口 {self.serial.port} 失败: {e}")
-            return False
+            logger.error(f"打开串口 {self.port} 失败: {e}")
+            self._serial = None
+            raise
 
-        logging.debug(f"打开串口 {self.serial.port} 成功")
-        return True
-
-    def disconnect(self) -> bool:
+    def close(self):
+        self._is_running = False
         try:
-            if self.serial.is_open:
-                self.serial.close()
-            self._connected = False
+            if self._read_thread and self._read_thread.is_alive():
+                self._read_thread.join()  # 等待读取线程安全退出
+            self._read_thread = None
+            if self._serial and self._serial.is_open:
+                self._serial.close()
+                return
+            self._serial = None
+            logger.info(f"关闭串口 {self.port} 成功")
         except serial.SerialException as e:
-            logging.error(f"关闭串口 {self.serial.port} 失败: {e}")
-            return False
-        logging.debug(f"关闭串口 {self.serial.port} 成功")
-        return True
+            logger.error(f"关闭串口 {self.port} 失败: {e}")
 
-    def send_data(self, data: bytes) -> bool:
+    @property
+    def is_open(self) -> bool:
+        return self._serial is not None and self._serial.is_open
+
+    def send_data(self, data: bytes):
         if not isinstance(data, bytes) or not data:
-            logging.error("发送失败：数据必须为字节类型且不能为空")
-            return False
-        if not self.serial.is_open:
-            logging.error("发送失败：串口未打开")
-            return False
+            logger.error("发送失败：数据必须为字节类型且不能为空")
+            return
+        if not self._serial.is_open:
+            logger.error("发送失败：串口未打开")
+            return
         try:
-            n = self.serial.write(data)
+            n = self._serial.write(data)
             if n != len(data):
-                logging.error("发送失败：数据长度与发送长度不一致")
-                return False
+                logger.error("发送失败：数据长度与发送长度不一致")
         except serial.SerialTimeoutException:
-            logging.error("发送失败：超时")
-            return False
+            logger.error("发送失败：超时")
+            raise
         except serial.SerialException as e:
-            logging.error(f"发送失败: 串口错误 {e}")
-            return False
-        return True
+            logger.error(f"发送失败: 串口错误 {e}")
+            raise
 
-    def receive_data(self) -> bytes | None:
-        if not self.serial.is_open:
-            logging.warning("接收失败：串口未打开")
-            return None
+    def receive_data(self) -> bytes:
+        if not self._serial.is_open:
+            logger.warning("接收失败：串口未打开")
+            return b""
         try:
-            if self.serial.in_waiting > 0:
-                data = self.serial.read(self.serial.in_waiting)
-                logging.debug(f"读取数据: {data}")
+            if self._serial.in_waiting > 0:
+                data = self._serial.read(self._serial.in_waiting)
                 return data
         except serial.SerialException as e:
-            logging.error(f"接收失败: 串口错误 {e}")
-            return None
+            logger.error(f"接收失败: 串口错误 {e}")
+            return b""
 
-        return None
+        return b""
 
     def _receive_loop(self):
-        while self.serial.is_open:
+        print("start receive loop")
+        while self._is_running and self._serial:
             try:
-                if self.serial.in_waiting > 0:
-                    data = self.serial.read(self.serial.in_waiting)
-                    if data:
-                        self._emit_data(data)
+                if self._serial.in_waiting > 0:
+                    data = self._serial.read(self._serial.in_waiting)
+                    self._emit_data(data)
+            except serial.SerialException as e:
+                logger.error(f"接收失败: 串口错误 {e}")
+                self._is_running = False
             except Exception as e:
-                print(f"Error in receive loop: {e}")
-                self._connected = False
-            time.sleep(0.01)  # 避免 CPU 占用过高
+                logger.error(f"接收失败：{e}")
+                self._is_running = False
+            time.sleep(0.01)
+        if self._serial and self._serial.is_open:
+            self._serial.close()
 
     def list_ports(self) -> list[str]:
         ports = []
