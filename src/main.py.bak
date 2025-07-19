@@ -1,0 +1,39 @@
+import sys
+import logging
+
+from PySide6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+)
+
+from view.demo_ui import Ui_MainWindow
+from controller.serial_controller import SerialController
+from controller.ca import PlotCanvas
+
+
+logging.basicConfig(level=logging.DEBUG)
+
+
+class MainWindow(QMainWindow):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+
+        self.plot_canvas = PlotCanvas(self)
+        self.ui.verticalLayout.addWidget(PlotCanvas())
+
+        self.controller = SerialController(self.ui.pushButton, self.ui.pushButton_2)
+
+        # self.ui.pushButton.clicked.connect(self.click)
+
+    # def click(self):
+    #     self.ui.pushButton.setText("测试")
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.setWindowTitle("第一个程序")
+    window.show()
+    app.exit(app.exec())
