@@ -21,10 +21,10 @@ class SpectrumFigureWidget(QWidget):
         self._init_plot()
 
         self.comm_manager = comm_manager
-        # 创建消息处理器
-        self._spectrum_handler = SpectrumHandler()
-        self._spectrum_handler.set_callback(self.on_receive_spectrum_data)
-        self.comm_manager.register_handler(Command.CHECK_RESP, self._spectrum_handler)
+        # # 创建消息处理器
+        # self._spectrum_handler = SpectrumHandler()
+        # self._spectrum_handler.set_callback(self.on_receive_spectrum_data)
+        # self.comm_manager.register_handler(Command.CHECK_RESP, self._spectrum_handler)
 
         # 数据缓存
         self._x_data = []
