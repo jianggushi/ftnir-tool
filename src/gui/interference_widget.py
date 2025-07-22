@@ -9,7 +9,8 @@ from comm.protocol.command import Command
 from comm.handler.spectrum import SpectrumHandler
 
 
-class FigureWidget(QWidget):
+class InterferenceFigureWidget(QWidget):
+
     def __init__(self, comm_manager: CommManager):
 
         # 设置中文字体
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     import sys
 
     app = QApplication(sys.argv)
-    widget = FigureWidget()
+    widget = InterferenceFigureWidget()
     widget.show()
 
     # 测试数据
