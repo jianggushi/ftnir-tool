@@ -37,11 +37,13 @@ class HandshakeManager(MessageHandler):
 
     def handle(self, msg: RawMessage):
         """处理握手响应"""
-        logger.info("收到握手响应")
-        self._handshake_complete = True
-        if self._handshake_timer:
-            self._handshake_timer.cancel()
-            self._handshake_timer = None
+        if msg.command == Command.HANDSHAKE_RESP:
+            self._handshake_complete = True
+            if self._handshake_timer:
+                self._handshake_timer.cancel()
+                self._handshake_timer = None
+        elif msg.command == Command.HANDSHAKE_REQ:
+            self._send_message(Command.HANDSHAKE_RESP, b"")
 
     def _start_handshake(self):
         if self._handshake_complete:
@@ -51,7 +53,7 @@ class HandshakeManager(MessageHandler):
         if self._handshake_timer:
             self._handshake_timer.cancel()
         # 发送握手命令
-        self._send_message(Command.HANDSHAKE, b"")
+        self._send_message(Command.HANDSHAKE_REQ, b"")
         # 启动握手超时检查定时器
         self._handshake_timer = threading.Timer(3.0, self._handle_timeout)
         self._handshake_timer.start()
@@ -60,15 +62,17 @@ class HandshakeManager(MessageHandler):
         """处理握手超时"""
         if not self._handshake_complete:
             self._retry_count += 1
-            logger.warning(f"握手超时，准备第 {self._retry_count + 1} 次重试...")
+            logging.warning(
+                f"Handshake timeout, 5 seconds later will retry {self._retry_count + 1} times..."
+            )
             # 5秒后重试
             self._handshake_timer = threading.Timer(5.0, self._start_handshake)
             self._handshake_timer.start()
 
 
 class CommManager:
-    def __init__(self):
-        self.transport = SerialTransport("COM1")
+    def __init__(self, serial_port: str = "COM1"):
+        self.transport = SerialTransport(serial_port)
         self.transport.on_data_received(self._handle_raw_data)
 
         self._parser = MessageParser()
@@ -78,7 +82,8 @@ class CommManager:
         self._handshake = HandshakeManager(self._send_message)
 
         self._message_handlers: dict[Command, MessageHandler] = {
-            Command.HANDSHAKE: self._handshake,
+            Command.HANDSHAKE_REQ: self._handshake,
+            Command.HANDSHAKE_RESP: self._handshake,
         }
 
     def connect(self):
@@ -105,13 +110,13 @@ class CommManager:
 
     def _handle_raw_data(self, data: bytes):
         with self._lock:
-            print(f"Received data: {data.hex()}")
             self._parser.feed(data)
             for raw_message in self._parser.parse():
                 self._process_message(raw_message)
 
     def _process_message(self, msg: RawMessage):
         """处理接收到的消息"""
+        logger.info(f"Received message: {msg.command.name}, Data: {msg.data}")
         handler = self._message_handlers.get(msg.command)
         if handler:
             handler.handle(msg)
@@ -123,7 +128,7 @@ class CommManager:
     def _send_message(self, command: Command, data: bytes = b""):
         message_bytes = self._parser.pack(command, data)
         self.transport.send_data(message_bytes)
-        logger.info(f"发送消息: {command}, 数据: {data.hex()}")
+        logger.info(f"send message: {command.name}")
 
     def register_handler(self, command: Command, handler: MessageHandler):
         """注册消息处理器"""

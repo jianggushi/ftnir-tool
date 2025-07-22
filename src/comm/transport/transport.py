@@ -34,7 +34,6 @@ class ITransport(ABC):
         self._data_received_callback = callback
 
     def _emit_data(self, data: bytes):
-        logger.info(data)
         try:
             if self._data_received_callback:
                 self._data_received_callback(data)
