@@ -16,7 +16,7 @@ class SpectrumHandler(MessageHandler):
         self._callback = callback
 
     def handle(self, msg: RawMessage):
-        if msg.command in [Command.CHECK_RESULT]:
+        if msg.command in [Command.CHECK_RESP]:
             try:
                 points = self._parse_spectrum_data(msg.data)
                 self._callback(points)

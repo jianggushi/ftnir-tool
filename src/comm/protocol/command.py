@@ -2,12 +2,14 @@ import enum
 
 
 class Command(enum.IntEnum):
-    HANDSHAKE = 0x01
+    HANDSHAKE_REQ = 0x0101
+
+    START_CHECK = 0x0110
+    STOP_CHECK = 0x0111
 
     START_COLLECT = 0x10
     STOP_COLLECT = 0x11
 
-    START_CHECK = 0x20
-    STOP_CHECK = 0x21
+    HANDSHAKE_RESP = 0x0201
 
-    CHECK_RESULT = 0x80
+    CHECK_RESP = 0x0210

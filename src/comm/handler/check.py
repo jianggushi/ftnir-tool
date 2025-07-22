@@ -22,7 +22,7 @@ class CheckHandler(MessageHandler):
         self._repeatability_callback = callback
 
     def handle(self, msg: RawMessage):
-        if msg.command == Command.CHECK_RESULT:
+        if msg.command == Command.CHECK_RESP:
             check_type = msg.data[0]
             check_data = msg.data[1:]
 

@@ -24,7 +24,7 @@ class FigureWidget(QWidget):
         # 创建消息处理器
         self._spectrum_handler = SpectrumHandler()
         self._spectrum_handler.set_callback(self.on_receive_spectrum_data)
-        self.comm_manager.register_handler(Command.CHECK_RESULT, self._spectrum_handler)
+        self.comm_manager.register_handler(Command.CHECK_RESP, self._spectrum_handler)
 
         # 数据缓存
         self._x_data = []
@@ -54,8 +54,8 @@ class FigureWidget(QWidget):
             wspace=0,  # 垂直间距清零
         )
         # 设置初始坐标范围
-        self.ax.set_xlim(0, 1000)  # 默认显示前1000个数据点
-        self.ax.set_ylim(-1.0, 1.0)  # 根据信号强度合理范围设定
+        # self.ax.set_xlim(0, 1000)  # 默认显示前1000个数据点
+        # self.ax.set_ylim(-1.0, 1.0)  # 根据信号强度合理范围设定
         # self.ax.set_title("FTIR数据")
         self.ax.set_xlabel("数据点")
         self.ax.set_ylabel("干涉图强度")
