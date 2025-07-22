@@ -6,17 +6,18 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QLabel,
+    QGroupBox,
 )
 from PySide6.QtCore import Signal, Slot, QTimer
 import numpy as np
 
 
-class CollectWidget(QWidget):
+class CollectWidget(QGroupBox):
     # 信号，用于通知采集数据
     data_collected = Signal(list, list)
 
     def __init__(self):
-        super().__init__()
+        super().__init__("数据采集")
         self.setup_ui()
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.collect_data)
@@ -31,18 +32,24 @@ class CollectWidget(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        # 按钮
+        # 按钮布局
         button_layout = QHBoxLayout()
+
+        # 开始采集按钮
         self.start_button = QPushButton("开始采集")
+        self.start_button.clicked.connect(self.start_collect)
+
+        # 停止采集按钮
         self.stop_button = QPushButton("停止采集")
+        self.stop_button.clicked.connect(self.stop_collect)
         self.stop_button.setEnabled(False)
+
+        # 添加按钮到布局
         button_layout.addWidget(self.start_button)
         button_layout.addWidget(self.stop_button)
-        layout.addLayout(button_layout)
 
-        # 信号与槽
-        self.start_button.clicked.connect(self.start_collect)
-        self.stop_button.clicked.connect(self.stop_collect)
+        # 添加按钮布局到主布局
+        layout.addLayout(button_layout)
 
     @Slot()
     def start_collect(self):

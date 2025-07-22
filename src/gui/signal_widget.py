@@ -17,8 +17,8 @@ class SignalCheckWidget(QGroupBox):
     check_started = Signal()  # 请求检查信号
     check_stopped = Signal()  # 请求停止检查
 
-    def __init__(self, parent=None):
-        super().__init__("信号检查", parent)
+    def __init__(self):
+        super().__init__("信号检查")
         self.setup_ui()
 
     def setup_ui(self):
