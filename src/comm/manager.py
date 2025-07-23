@@ -116,14 +116,14 @@ class CommManager:
 
     def _process_message(self, msg: RawMessage):
         """处理接收到的消息"""
-        logger.info(f"Received message: {msg.command.name}, Data: {msg.data}")
+        logger.info(
+            f"received message: {msg.command.name}, payload length: {len(msg.data)}"
+        )
         handler = self._message_handlers.get(msg.command)
         if handler:
             handler.handle(msg)
         else:
-            logger.warning(f"未找到处理器处理命令: {msg.command}")
-        # if msg.command == Command.HANDSHAKE:
-        #     self._handshake.handle_response()
+            logger.warning(f"no handler found for message: {msg.command.name}")
 
     def _send_message(self, command: Command, data: bytes = b""):
         message_bytes = self._parser.pack(command, data)
