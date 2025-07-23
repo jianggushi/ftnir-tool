@@ -3,6 +3,9 @@ import time
 import random
 import logging
 from threading import Thread
+import queue
+from queue import Queue
+
 from .transport import ITransport
 
 logger = logging.getLogger(__name__)
@@ -19,8 +22,11 @@ class SerialTransport(ITransport):
         self.parity = "N"
 
         self._serial: serial.Serial = None
-        self._read_thread: Thread = None
+
         self._is_running = False
+        self._receive_thread: Thread = None
+        self._process_thread: Thread = None
+        self._process_queue = Queue(maxsize=100)
 
     def open(self):
         if self.is_open:
@@ -34,10 +40,12 @@ class SerialTransport(ITransport):
                 stopbits=self.stopbits,
                 parity=self.parity,
             )
-            # start the read thread
-            self._read_thread = Thread(target=self._receive_loop, daemon=True)
+            # start the receive and process threads
+            self._process_thread = Thread(target=self._process_loop, daemon=True)
+            self._receive_thread = Thread(target=self._receive_loop, daemon=True)
             self._is_running = True
-            self._read_thread.start()
+            self._process_thread.start()
+            self._receive_thread.start()
 
             logger.info(f"opened serial port {self.port} successfully")
         except serial.SerialException as e:
@@ -54,17 +62,24 @@ class SerialTransport(ITransport):
 
     def close(self):
         try:
-            self._is_running = False  # 通知接收线程停止
-            if self._read_thread and self._read_thread.is_alive():
-                self._read_thread.join()  # 等待读取线程安全退出
-            self._read_thread = None
+            # notify threads to stop
+            self._is_running = False
+            # wait for receive thread to finish
+            if self._receive_thread and self._receive_thread.is_alive():
+                self._receive_thread.join()  # 等待读取线程安全退出
+            self._receive_thread = None
+            # wait for process thread to finish
+            if self._process_thread and self._process_thread.is_alive():
+                self._process_thread.join()
+            self._process_thread = None
+            # close serial port
             if self._serial and self._serial.is_open:
                 self._serial.close()
                 return
             self._serial = None
             logger.info(f"close serial port {self.port} success")
         except serial.SerialException as e:
-            logger.error(f"close serial port {self.port} failed: {e}")
+            logger.error(f"failed to close serial port {self.port}: {e}")
 
     @property
     def is_open(self) -> bool:
@@ -110,76 +125,33 @@ class SerialTransport(ITransport):
     def _receive_loop(self):
         while self._is_running:
             try:
-                data = self._serial.read(1)  # 阻塞式读取，等待数据到达
+                # block on reading data
+                data = self._serial.read(1)
                 if self._serial.in_waiting > 0:
                     data += self._serial.read(self._serial.in_waiting)
                 if data:
-                    print(data.hex(sep=" "))
-                    self._emit_data(data)
+                    # non-blocking put to process queue
+                    self._process_queue.put(data, block=False)
             except serial.SerialException as e:
-                logger.error(f"接收失败: 串口错误 {e}")
+                logger.error(f"failed to read data from serial port: {e}")
+            except queue.Full:
+                logger.warning("failed to put data to process queue: queue is full")
             except Exception as e:
-                logger.error(f"接收失败：{e}")
-            time.sleep(0.01)
+                logger.error(f"failed to receive data: {e}")
+
+    def _process_loop(self):
+        while self._is_running:
+            try:
+                data = self._process_queue.get(timeout=1)
+                print(data.hex(sep=" "))
+                self._emit_data(data)
+            except queue.Empty:
+                continue
+            except Exception as e:
+                logger.error(f"failed to process data: {e}")
 
     def list_ports(self) -> list[str]:
         ports = []
         for port in serial.tools.list_ports.comports():
             ports.append(port.device)
         return ports
-
-
-class _ReadThread(Thread):
-
-    def __init__(self, ser: serial.Serial):
-        super().__init__(daemon=True)
-        self.serial: serial.Serial = ser
-        self.is_running: bool = False
-        self.buffer: bytes = b""
-        # self.callback: callable([bytes], None) = callback
-
-    def run(self):
-        self.is_running = True
-        while self.is_running and self.serial.is_open:
-            if self.serial.in_waiting > 0:
-                data = self.serial.read(500 * 2)
-                # 将二进制数据解析回整数列表
-                nums = [
-                    int.from_bytes(data[i : i + 2], "big")
-                    for i in range(0, len(data), 2)
-                ]
-                # while b"\n" in self.buffer:
-                #     frame, self.buffer = self.buffer.split(b"\n", 1)
-                #     if frame:
-                #         self.data_received.emit(frame)
-                print(nums)
-        self.is_running = False
-
-    def stop(self):
-        self.is_running = False
-        if self.is_alive():
-            self.join()
-
-
-class _WriteThread(Thread):
-    def __init__(self, serial_instance: serial.Serial):
-        super().__init__(daemon=True)
-        self.serial = serial_instance
-        self.is_running = False
-
-    def run(self):
-        self.is_running = True
-        while self.is_running and self.serial.is_open:
-            nums = [random.randint(0, 1000) for _ in range(500)]
-            # 转换为HEX格式：每个数字用2字节大端表示，0填充
-            hex_data = b"".join([num.to_bytes(2, "big") for num in nums])
-            data = hex_data
-            # 发送数据
-            self.serial.write(data)
-            time.sleep(1)
-        self.is_running = False
-
-    def stop(self):
-        self.is_running = False
-        if self.is_alive():
-            self.join()  # 等待线程结束
