@@ -1,24 +1,26 @@
 from PySide6.QtWidgets import (
-    QWidget,
     QVBoxLayout,
     QHBoxLayout,
     QGroupBox,
     QPushButton,
-    QProgressBar,
     QRadioButton,
     QButtonGroup,
 )
 
 from PySide6.QtCore import Slot, Signal
 
+from handler.manager import CommManager
+
 
 class SignalCheckWidget(QGroupBox):
     # 定义信号
-    check_started = Signal(str)  # 请求检查信号
+    check_started = Signal()  # 请求检查信号
     check_stopped = Signal()  # 请求停止检查
 
-    def __init__(self):
+    def __init__(self, comm_manager: CommManager):
         super().__init__("信号检查")
+        self.comm_manager = comm_manager
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -78,15 +80,14 @@ class SignalCheckWidget(QGroupBox):
         self._is_checking = True
 
         # 获取检查类型并发送信号
-        check_type = ""
         if self.stability_radio.isChecked():
-            check_type = "stability"
+            self.comm_manager.start_check_stability()
         elif self.accuracy_radio.isChecked():
-            check_type = "accuracy"
+            self.comm_manager.start_check_accuracy()
         elif self.repeatability_radio.isChecked():
-            check_type = "repeatability"
+            self.comm_manager.start_check_repeatability()
 
-        self.check_started.emit(check_type)
+        self.check_started.emit()
 
     @Slot()
     def stop_check(self):
@@ -94,4 +95,7 @@ class SignalCheckWidget(QGroupBox):
         self.start_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
         self._is_checking = False
+
+        self.comm_manager.stop_check()
+
         self.check_stopped.emit()

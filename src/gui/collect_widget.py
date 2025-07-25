@@ -1,15 +1,11 @@
+import numpy as np
 from PySide6.QtWidgets import (
-    QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QRadioButton,
-    QLineEdit,
     QPushButton,
-    QLabel,
     QGroupBox,
 )
 from PySide6.QtCore import Signal, Slot, QTimer
-import numpy as np
 
 
 class CollectWidget(QGroupBox):

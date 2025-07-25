@@ -1,19 +1,16 @@
 from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
-    QWidget,
     QFormLayout,
     QLabel,
     QLineEdit,
     QComboBox,
     QPushButton,
-    QSpinBox,
     QHBoxLayout,
     QRadioButton,
 )
-from PySide6.QtCore import Qt
 
-from comm.manager import CommManager
+from handler.manager import CommManager
 
 
 class HardwareSettingWidget(QDialog):

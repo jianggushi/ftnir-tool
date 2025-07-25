@@ -1,11 +1,9 @@
 from PySide6.QtWidgets import (
-    QWidget,
     QVBoxLayout,
     QHBoxLayout,
     QGroupBox,
     QPushButton,
 )
-
 from PySide6.QtCore import Slot, Signal
 
 

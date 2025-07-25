@@ -5,7 +5,7 @@ from typing import Callable
 
 
 from .base import MessageHandler
-from ..protocol.parser import RawMessage, Command
+from comm.protocol.parser import RawMessage, Command
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,13 @@ class InterferenceHandler(MessageHandler):
     def clear_callbacks(self):
         self._callbacks.clear()
 
+    def _run_callbacks(self, data: np.ndarray):
+        for callback in self._callbacks:
+            try:
+                callback(data)
+            except Exception as e:
+                logger.error(f"failed to run callback {callback.__name__}: {e}")
+
     def handle(self, msg: RawMessage):
         if msg.command in [Command.CHECK_RESP]:
             try:
@@ -33,13 +40,6 @@ class InterferenceHandler(MessageHandler):
                 self._run_callbacks(data)
             except Exception as e:
                 logger.error(f"failed to handle message {msg.command}: {e}")
-
-    def _run_callbacks(self, data: np.ndarray):
-        for callback in self._callbacks:
-            try:
-                callback(data)
-            except Exception as e:
-                logger.error(f"failed to run callback {callback.__name__}: {e}")
 
     def _parse_spectrum_data(self, data: bytes) -> list[float]:
         if len(data) % 4 != 0:

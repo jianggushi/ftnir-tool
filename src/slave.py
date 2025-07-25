@@ -3,7 +3,7 @@ import struct
 import random
 import time
 import sys
-from comm.manager import CommManager
+from handler.manager import CommManager
 from comm.protocol.command import Command
 from config.log import setup_logging
 from util.signal import generate_test_signal

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from ..protocol.parser import RawMessage
+from comm.protocol.parser import RawMessage
 
 
 class MessageHandler(ABC):
