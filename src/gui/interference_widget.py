@@ -6,7 +6,6 @@ from matplotlib import rcParams
 
 from comm.manager import CommManager
 from comm.protocol.command import Command
-from comm.handler.spectrum import SpectrumHandler
 
 
 class InterferenceFigureWidget(QWidget):
@@ -22,10 +21,9 @@ class InterferenceFigureWidget(QWidget):
         self._init_plot()
 
         self.comm_manager = comm_manager
-        # 创建消息处理器
-        self._spectrum_handler = SpectrumHandler()
-        self._spectrum_handler.set_callback(self.on_receive_spectrum_data)
-        self.comm_manager.register_handler(Command.CHECK_RESP, self._spectrum_handler)
+        self.comm_manager.interference_handler.add_callback(
+            self.on_receive_spectrum_data
+        )
 
         # 数据缓存
         self._x_data = []
@@ -98,10 +96,10 @@ class InterferenceFigureWidget(QWidget):
         self.line.set_data([], [])
         self.canvas.draw()
 
-    def on_receive_spectrum_data(self, data: list[float]):
-        """处理接收到的光谱数据"""
-        x_data = list(range(len(data)))
-        self.update_data(x_data, data)
+    def on_receive_spectrum_data(self, data: np.ndarray):
+        # TODO: 数据类型转换可能有问题
+        x_data = list(range(data.shape[0]))
+        self.update_data(x_data, data.tolist())
 
 
 if __name__ == "__main__":

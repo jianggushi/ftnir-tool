@@ -6,7 +6,7 @@ from matplotlib import rcParams
 
 from comm.manager import CommManager
 from comm.protocol.command import Command
-from comm.handler.spectrum import SpectrumHandler
+from processor.fft_processor import FFTProcessor
 
 
 class SpectrumFigureWidget(QWidget):
@@ -21,10 +21,9 @@ class SpectrumFigureWidget(QWidget):
         self._init_plot()
 
         self.comm_manager = comm_manager
-        # # 创建消息处理器
-        # self._spectrum_handler = SpectrumHandler()
-        # self._spectrum_handler.set_callback(self.on_receive_spectrum_data)
-        # self.comm_manager.register_handler(Command.CHECK_RESP, self._spectrum_handler)
+        self.comm_manager.interference_handler.add_callback(
+            self.on_receive_spectrum_data
+        )
 
         # 数据缓存
         self._x_data = []
@@ -97,10 +96,11 @@ class SpectrumFigureWidget(QWidget):
         self.line.set_data([], [])
         self.canvas.draw()
 
-    def on_receive_spectrum_data(self, data: list[float]):
+    def on_receive_spectrum_data(self, data: np.ndarray):
         """处理接收到的光谱数据"""
-        x_data = list(range(len(data)))
-        self.update_data(x_data, data)
+        data = FFTProcessor().process(data)
+        x_data = list(range(data.shape[0]))
+        self.update_data(x_data, data.tolist())
 
 
 if __name__ == "__main__":
