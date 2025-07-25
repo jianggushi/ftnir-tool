@@ -60,7 +60,7 @@ class ControlWidget(QWidget):
     def on_check_start(self, check_type: str):
         """开始信号检查"""
         # 根据检查类型发送不同的命令
-        if check_type == "光源稳定性":
+        if check_type == "stability":
             self.comm_manager.start_check_stability()
         elif check_type == "波长准确性":
             self.comm_manager.start_check_accuracy()

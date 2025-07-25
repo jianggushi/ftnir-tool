@@ -14,7 +14,7 @@ from PySide6.QtCore import Slot, Signal
 
 class SignalCheckWidget(QGroupBox):
     # 定义信号
-    check_started = Signal()  # 请求检查信号
+    check_started = Signal(str)  # 请求检查信号
     check_stopped = Signal()  # 请求停止检查
 
     def __init__(self):
