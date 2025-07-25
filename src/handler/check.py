@@ -1,6 +1,6 @@
 from typing import Callable
 from .base import MessageHandler
-from ..protocol.parser import RawMessage, Command
+from comm.protocol.parser import RawMessage, Command
 import logging
 
 logger = logging.getLogger(__name__)

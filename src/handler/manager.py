@@ -1,14 +1,14 @@
-from .transport.transport import ITransport
-from .transport.serial import SerialTransport
-from .protocol.parser import MessageParser
-from .protocol.parser import RawMessage
-from .protocol.parser import Command
+from comm.transport.transport import ITransport
+from comm.transport.serial import SerialTransport
+from comm.protocol.parser import MessageParser
+from comm.protocol.parser import RawMessage
+from comm.protocol.parser import Command
 import threading
 import logging
 import time
 from typing import Callable
-from .handler.base import MessageHandler
-from comm.handler.interference import InterferenceHandler
+from .base import MessageHandler
+from .interference import InterferenceHandler
 
 logger = logging.getLogger(__name__)
 
@@ -86,8 +86,8 @@ class CommManager:
 
         self._message_handlers: dict[Command, MessageHandler] = {
             Command.HANDSHAKE_REQ: self._handshake,
-            Command.HANDSHAKE_RESP: self._handshake,
-            Command.CHECK_RESP: self.interference_handler,
+            Command.HANDSHAKE_RES: self._handshake,
+            Command.CHECK_LIGHT_STABILITY: self.interference_handler,
         }
 
     def connect(self):
@@ -149,20 +149,14 @@ class CommManager:
     def stop_collect(self):
         self._send_message(Command.STOP_COLLECT)
 
-    def start_check_stability(self):
-        self._send_message(Command.START_CHECK, b"\01")
+    def check_light_stability(self):
+        self._send_message(Command.CHECK_LIGHT_STABILITY, b"\01")
 
-    def stop_check_stability(self):
-        self._send_message(Command.STOP_CHECK, b"\01")
+    def check_standard_wave_accuracy(self):
+        self._send_message(Command.CHECK_STANDARD_WAVE_ACCURACY, b"\02")
 
-    def start_check_accuracy(self):
-        self._send_message(Command.START_CHECK, b"\02")
+    def check_standard_wave_repeatability(self):
+        self._send_message(Command.CHECK_STANDARD_WAVE_REPEATABILITY, b"\03")
 
-    def stop_check_accuracy(self):
-        self._send_message(Command.STOP_CHECK, b"\02")
-
-    def start_check_repeatability(self):
-        self._send_message(Command.START_CHECK, b"\03")
-
-    def stop_check_repeatability(self):
-        self._send_message(Command.STOP_CHECK, b"\03")
+    def check_stop(self):
+        self._send_message(Command.CHECK_STOP, b"\03")

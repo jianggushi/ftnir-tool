@@ -1,12 +1,13 @@
+import numpy as np
+
 from PySide6.QtWidgets import QWidget, QVBoxLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-import numpy as np
 from matplotlib import rcParams
 
-from comm.manager import CommManager
+from handler.manager import CommManager
 from comm.protocol.command import Command
-from processor.fft_processor import FFTProcessor
+from handler.processor.fft_processor import FFTProcessor
 
 
 class SpectrumFigureWidget(QWidget):

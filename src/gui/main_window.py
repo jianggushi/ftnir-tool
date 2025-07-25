@@ -1,22 +1,14 @@
 from PySide6.QtWidgets import (
-    QApplication,
     QMainWindow,
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QTabWidget,
-    QStatusBar,
-    QMenuBar,
     QMenu,
-    QMessageBox,
     QSplitter,
-    QLabel,
-    QPushButton,
-    QTextEdit,
 )
 from PySide6.QtCore import Qt
 
-from comm.manager import CommManager
+from handler.manager import CommManager
 from .control_widget import ControlWidget
 from .interference_widget import InterferenceFigureWidget
 from .spectrum_figure import SpectrumFigureWidget

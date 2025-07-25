@@ -4,9 +4,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Slot
 
-from comm.manager import CommManager
-from comm.protocol.command import Command
-
+from handler.manager import CommManager
 from .communication_widget import CommunicationWidget
 from .signal_widget import SignalCheckWidget
 from .collect_widget import CollectWidget
@@ -15,9 +13,9 @@ from .collect_widget import CollectWidget
 class ControlWidget(QWidget):
     def __init__(self, comm_manager: CommManager):
         super().__init__()
-        self.setup_ui()
-
         self.comm_manager = comm_manager
+
+        self.setup_ui()
 
     def setup_ui(self):
         # Main layout
@@ -30,7 +28,7 @@ class ControlWidget(QWidget):
         self.comm_widget.disconnected.connect(self.on_disconnect)
 
         # Add signal check widget
-        self.signal_widget = SignalCheckWidget()
+        self.signal_widget = SignalCheckWidget(self.comm_manager)
         self.signal_widget.check_started.connect(self.on_check_start)
         self.signal_widget.check_stopped.connect(self.on_check_stop)
 
@@ -57,29 +55,12 @@ class ControlWidget(QWidget):
         self.comm_manager.disconnect()
 
     @Slot()
-    def on_check_start(self, check_type: str):
-        """开始信号检查"""
-        # 根据检查类型发送不同的命令
-        if check_type == "stability":
-            self.comm_manager.start_check_stability()
-        elif check_type == "波长准确性":
-            self.comm_manager.start_check_accuracy()
-        elif check_type == "波长重复性":
-            self.comm_manager.start_check_repeatability()
-        else:
-            raise ValueError(f"未知检查类型: {check_type}")
+    def on_check_start(self):
+        pass
 
     @Slot()
     def on_check_stop(self):
-        """停止信号检查"""
-        if self.signal_widget.stability_radio.isChecked():
-            self.comm_manager.stop_check_stability()
-        elif self.signal_widget.accuracy_radio.isChecked():
-            self.comm_manager.stop_check_accuracy()
-        elif self.signal_widget.repeatability_radio.isChecked():
-            self.comm_manager.stop_check_repeatability()
-        else:
-            raise ValueError("没有选中的检查类型")
+        pass
 
     @Slot(list, list)
     def on_data_collected(self, x_data, y_data):
