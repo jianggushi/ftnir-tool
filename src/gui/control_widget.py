@@ -6,7 +6,6 @@ from PySide6.QtCore import Slot
 
 from comm.manager import CommManager
 from comm.protocol.command import Command
-from comm.handler.spectrum import SpectrumHandler
 
 from .communication_widget import CommunicationWidget
 from .signal_widget import SignalCheckWidget

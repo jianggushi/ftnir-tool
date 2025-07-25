@@ -8,6 +8,7 @@ import logging
 import time
 from typing import Callable
 from .handler.base import MessageHandler
+from comm.handler.interference import InterferenceHandler
 
 logger = logging.getLogger(__name__)
 
@@ -81,9 +82,12 @@ class CommManager:
         self._connected = False
         self._handshake = HandshakeManager(self._send_message)
 
+        self.interference_handler = InterferenceHandler()
+
         self._message_handlers: dict[Command, MessageHandler] = {
             Command.HANDSHAKE_REQ: self._handshake,
             Command.HANDSHAKE_RESP: self._handshake,
+            Command.CHECK_RESP: self.interference_handler,
         }
 
     def connect(self):
