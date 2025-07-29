@@ -1,6 +1,11 @@
+import os
+
+os.environ["QT_API"] = "PySide6"
+
 import numpy as np
 from PySide6.QtWidgets import QWidget, QVBoxLayout
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib import rcParams
 
@@ -37,6 +42,10 @@ class InterferenceFigureWidget(QWidget):
         # 创建matplotlib画布
         self.figure = Figure(figsize=(8, 6), tight_layout=True)
         self.canvas = FigureCanvas(self.figure)
+
+        toolbar = NavigationToolbar(self.canvas, self)
+
+        layout.addWidget(toolbar)
         layout.addWidget(self.canvas)
 
     def _init_plot(self):
