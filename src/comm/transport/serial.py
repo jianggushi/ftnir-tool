@@ -39,11 +39,12 @@ class SerialTransport(ITransport):
                 bytesize=self.bytesize,
                 stopbits=self.stopbits,
                 parity=self.parity,
+                timeout=1,  # 1 second timeout for read operations
             )
             # start the receive and process threads
+            self._is_running = True
             self._process_thread = Thread(target=self._process_loop, daemon=True)
             self._receive_thread = Thread(target=self._receive_loop, daemon=True)
-            self._is_running = True
             self._process_thread.start()
             self._receive_thread.start()
 
@@ -56,30 +57,37 @@ class SerialTransport(ITransport):
             logger.error(f"an UNEXPECTED error occurred while opening {self.port}: {e}")
             if self._serial:
                 self._serial.close()
-                self._serial = None
+            self._serial = None
             self._is_running = False
             raise
 
     def close(self):
+        if not self.is_open and not self._is_running:
+            logger.warning(f"serial port {self.port} is already closed")
+            return
         try:
             # notify threads to stop
             self._is_running = False
-            # wait for receive thread to finish
-            if self._receive_thread and self._receive_thread.is_alive():
-                self._receive_thread.join()  # 等待读取线程安全退出
-            self._receive_thread = None
-            # wait for process thread to finish
-            if self._process_thread and self._process_thread.is_alive():
-                self._process_thread.join()
-            self._process_thread = None
+
             # close serial port
             if self._serial and self._serial.is_open:
                 self._serial.close()
-                return
-            self._serial = None
-            logger.info(f"close serial port {self.port} success")
+
+            # wait for receive thread to finish
+            if self._receive_thread and self._receive_thread.is_alive():
+                self._receive_thread.join(timeout=2)  # 等待读取线程安全退出
+
+            # wait for process thread to finish
+            if self._process_thread and self._process_thread.is_alive():
+                self._process_thread.join(timeout=2)  # 等待读取线程安全退出
+
+            logger.info(f"closed serial port {self.port} success")
         except serial.SerialException as e:
             logger.error(f"failed to close serial port {self.port}: {e}")
+        finally:
+            self._serial = None
+            self._receive_thread = None
+            self._process_thread = None
 
     @property
     def is_open(self) -> bool:
@@ -123,13 +131,16 @@ class SerialTransport(ITransport):
         return b""
 
     def _receive_loop(self):
+        logger.debug("receive loop started")
         while self._is_running:
             try:
                 # block on reading data
                 data = self._serial.read(1)
+                if not data:
+                    continue
+
                 if self._serial.in_waiting > 0:
                     data += self._serial.read(self._serial.in_waiting)
-                if data:
                     # non-blocking put to process queue
                     self._process_queue.put(data, block=False)
             except serial.SerialException as e:
@@ -138,17 +149,20 @@ class SerialTransport(ITransport):
                 logger.warning("failed to put data to process queue: queue is full")
             except Exception as e:
                 logger.error(f"failed to receive data: {e}")
+        logger.debug("receive loop finished")
 
     def _process_loop(self):
+        logger.debug("process loop started")
         while self._is_running:
             try:
                 data = self._process_queue.get(timeout=1)
-                print(data.hex(sep=" "))
-                self._emit_data(data)
+                if data:
+                    self._emit_data(data)
             except queue.Empty:
                 continue
             except Exception as e:
                 logger.error(f"failed to process data: {e}")
+        logger.debug("process loop finished")
 
     def list_ports(self) -> list[str]:
         ports = []
