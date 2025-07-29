@@ -104,7 +104,7 @@ class CommManager:
     def disconnect(self):
         self._connected = False
         self._handshake.stop()
-
+        logger.info("stoped handshake")
         if self.transport.is_open:
             self.transport.close()
 
