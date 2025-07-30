@@ -89,23 +89,18 @@ class MainWindow(QMainWindow):
             action = settings_menu.addAction(action_name)
             action.triggered.connect(method)
 
+        self.hardware_dialog = HardwareSettingWidget(self)
+        self.acquisition_dialog = CollectSettingWidget(self)
+        self.communication_dialog = CommunicationSettingWidget(self.comm_manager)
+
     def open_hardware_settings(self):
-        # Create and show the hardware settings dialog
-        hardware_dialog = HardwareSettingWidget(self)
-        # hardware_dialog.tab_widget.setCurrentIndex(0)  # Select "硬件设置" tab
-        hardware_dialog.exec()
+        self.hardware_dialog.exec()
 
     def open_acquisition_settings(self):
-        # Create and show the acquisition settings dialog
-        acquisition_dialog = CollectSettingWidget(self)
-        # acquisition_dialog.tab_widget.setCurrentIndex(1)  # Select "采集设置" tab
-        acquisition_dialog.exec()
+        self.acquisition_dialog.exec()
 
     def open_communication_settings(self):
-        # Create and show the communication settings dialog
-        communication_dialog = CommunicationSettingWidget(self)
-        # communication_dialog.tab_widget.setCurrentIndex(2)  # Select "通信设置" tab
-        communication_dialog.exec()
+        self.communication_dialog.exec()
 
     def setup_status_bar(self):
         pass
