@@ -72,8 +72,8 @@ class HandshakeManager(MessageHandler):
 
 
 class CommManager:
-    def __init__(self, serial_port: str = "COM1"):
-        self.transport = SerialTransport(serial_port)
+    def __init__(self):
+        self.transport = SerialTransport()
         self.transport.on_data_received(self._handle_raw_data)
 
         self._parser = MessageParser()
@@ -107,6 +107,9 @@ class CommManager:
         logger.info("stoped handshake")
         if self.transport.is_open:
             self.transport.close()
+
+    def list_ports(self) -> list[str]:
+        return self.transport.list_ports()
 
     @property
     def is_connected(self) -> bool:

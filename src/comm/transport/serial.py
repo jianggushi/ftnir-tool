@@ -1,4 +1,5 @@
 import serial
+import serial.tools.list_ports
 import time
 import random
 import logging
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class SerialTransport(ITransport):
 
-    def __init__(self, port: str):
+    def __init__(self, port: str = ""):
         super().__init__()
         self.port = port
         self.baudrate = 115200
@@ -27,6 +28,15 @@ class SerialTransport(ITransport):
         self._receive_thread: Thread = None
         self._process_thread: Thread = None
         self._process_queue = Queue(maxsize=100)
+
+    def set_port(self, port: str):
+        if self.is_open:
+            logger.warning(
+                f"serial port {self.port} is already opened, cannot change port"
+            )
+            return
+        self.port = port
+        logger.info(f"set serial port to {self.port}")
 
     def open(self):
         if self.is_open:

@@ -172,14 +172,12 @@ class CommunicationSettingWidget(QDialog):
         self.refresh_button.clicked.connect(self.refresh_ports)
 
     def refresh_ports(self):
-        # TODO: 使用 comm_manager 获取串口列表
-        print("刷新通信端口列表")
-        # 示例清空并填充
         self.port_combo.clear()
-        ports = ["COM1", "COM2", "COM3"]  # 示例
+        ports = self.comm_manager.list_ports()
         self.port_combo.addItems(ports)
 
     def save_settings(self):
         # Placeholder for saving settings logic
-        print("Settings saved!")
+        port = self.port_combo.currentText()
+        self.comm_manager.transport.set_port(port)
         self.accept()
