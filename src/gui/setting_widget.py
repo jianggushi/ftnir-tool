@@ -26,8 +26,35 @@ class HardwareSettingWidget(QDialog):
 
         # Hardware settings form
         hardware_form = QFormLayout()
-        hardware_form.addRow(QLabel("硬件参数1:"), QLineEdit())
-        hardware_form.addRow(QLabel("硬件参数2:"), QLineEdit())
+
+        # 分辨率
+        self.resolution_combo = QComboBox()
+        resolution_options = ["0.2", "0.4", "0.8", "1.0", "2.0"]
+        self.resolution_combo.addItems(resolution_options)
+        self.resolution_combo.setCurrentText("0.4")
+        hardware_form.addRow(QLabel("分辨率:"), self.resolution_combo)
+
+        # 动镜速度
+        self.velocity_combo = QComboBox()
+        velocity_options = ["200", "300", "500", "1000", "2000", "3000"]
+        self.velocity_combo.addItems(velocity_options)
+        self.velocity_combo.setCurrentText("300")
+        hardware_form.addRow(QLabel("动镜速度:"), self.velocity_combo)
+
+        # 采样方向
+        self.direction_combo = QComboBox()
+        direction_options = ["正向", "反向"]
+        self.direction_combo.addItems(direction_options)
+        self.direction_combo.setCurrentText("正向")
+        hardware_form.addRow(QLabel("采样方向:"), self.direction_combo)
+
+        # 扫描模式
+        self.scan_mode_combo = QComboBox()
+        scan_mode_options = ["单向-单边", "单向-双边", "双向-单边", "双向-双边"]
+        self.scan_mode_combo.addItems(scan_mode_options)
+        self.scan_mode_combo.setCurrentText("单向-单边")
+        hardware_form.addRow(QLabel("扫描模式:"), self.scan_mode_combo)
+
         main_layout.addLayout(hardware_form)
 
         # Buttons
@@ -44,6 +71,10 @@ class HardwareSettingWidget(QDialog):
 
     def save_settings(self):
         # Placeholder for saving settings logic
+        resolution = self.resolution_combo.currentText()
+        velocity = self.velocity_combo.currentText()
+        direction = self.direction_combo.currentText()
+        scan_mode = self.scan_mode_combo.currentText()
         print("Settings saved!")
         self.accept()
 
@@ -116,8 +147,15 @@ class CommunicationSettingWidget(QDialog):
 
         # Communication settings form
         communication_form = QFormLayout()
-        communication_form.addRow(QLabel("通信端口:"), QLineEdit())
-        communication_form.addRow(QLabel("波特率:"), QComboBox())
+
+        self.port_combo = QComboBox()
+        self.refresh_button = QPushButton("刷新")
+
+        port_layout = QHBoxLayout()
+        port_layout.addWidget(self.port_combo)
+        port_layout.addWidget(self.refresh_button)
+
+        communication_form.addRow(QLabel("通信端口:"), port_layout)
         main_layout.addLayout(communication_form)
 
         # Buttons
@@ -131,6 +169,15 @@ class CommunicationSettingWidget(QDialog):
         # Connect buttons
         self.save_button.clicked.connect(self.save_settings)
         self.cancel_button.clicked.connect(self.reject)
+        self.refresh_button.clicked.connect(self.refresh_ports)
+
+    def refresh_ports(self):
+        # TODO: 使用 comm_manager 获取串口列表
+        print("刷新通信端口列表")
+        # 示例清空并填充
+        self.port_combo.clear()
+        ports = ["COM1", "COM2", "COM3"]  # 示例
+        self.port_combo.addItems(ports)
 
     def save_settings(self):
         # Placeholder for saving settings logic
