@@ -12,20 +12,20 @@ logger = logging.getLogger(__name__)
 
 class InterferenceHandler(MessageHandler):
     def __init__(self):
-        self._callbacks: list[Callable[[np.ndarray], None]] = []
+        self._callbacks: list[Callable[[map], None]] = []
 
-    def add_callback(self, callback: Callable[[np.ndarray], None]):
+    def add_callback(self, callback: Callable[[map], None]):
         if callback not in self._callbacks:
             self._callbacks.append(callback)
 
-    def remove_callback(self, callback: Callable[[np.ndarray], None]):
+    def remove_callback(self, callback: Callable[[map], None]):
         if callback in self._callbacks:
             self._callbacks.remove(callback)
 
     def clear_callbacks(self):
         self._callbacks.clear()
 
-    def _run_callbacks(self, data: np.ndarray):
+    def _run_callbacks(self, data: map):
         for callback in self._callbacks:
             try:
                 callback(data)
