@@ -8,7 +8,7 @@ import logging
 import time
 from typing import Callable
 from .base import MessageHandler
-from .interference import InterferenceHandler
+from .light_stablity import LightStabilityHandler
 
 logger = logging.getLogger(__name__)
 
@@ -38,13 +38,13 @@ class HandshakeManager(MessageHandler):
 
     def handle(self, msg: RawMessage):
         """处理握手响应"""
-        if msg.command == Command.HANDSHAKE_RESP:
+        if msg.command == Command.HANDSHAKE_RES:
             self._handshake_complete = True
             if self._handshake_timer:
                 self._handshake_timer.cancel()
                 self._handshake_timer = None
         elif msg.command == Command.HANDSHAKE_REQ:
-            self._send_message(Command.HANDSHAKE_RESP, b"")
+            self._send_message(Command.HANDSHAKE_RES, b"")
 
     def _start_handshake(self):
         if self._handshake_complete:
@@ -82,12 +82,12 @@ class CommManager:
         self._connected = False
         self._handshake = HandshakeManager(self._send_message)
 
-        self.interference_handler = InterferenceHandler()
+        self.light_stability_handler = LightStabilityHandler()
 
         self._message_handlers: dict[Command, MessageHandler] = {
             Command.HANDSHAKE_REQ: self._handshake,
             Command.HANDSHAKE_RES: self._handshake,
-            Command.CHECK_LIGHT_STABILITY: self.interference_handler,
+            Command.CHECK_LIGHT_STABILITY_RES: self.light_stability_handler,
         }
 
     def connect(self):

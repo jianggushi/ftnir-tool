@@ -22,7 +22,7 @@ class SpectrumFigureWidget(QWidget):
         self._init_plot()
 
         self.comm_manager = comm_manager
-        self.comm_manager.interference_handler.add_callback(
+        self.comm_manager.light_stability_handler.add_callback(
             self.on_receive_spectrum_data
         )
 
@@ -97,11 +97,11 @@ class SpectrumFigureWidget(QWidget):
         self.line.set_data([], [])
         self.canvas.draw()
 
-    def on_receive_spectrum_data(self, data: np.ndarray):
+    def on_receive_spectrum_data(self, data: map):
         """处理接收到的光谱数据"""
-        data = FFTProcessor().process(data)
-        x_data = list(range(data.shape[0]))
-        self.update_data(x_data, data.tolist())
+        spectrum_data = data.get("spectrum_data", np.array([]))
+        x_data = list(range(spectrum_data.shape[0]))
+        self.update_data(x_data, spectrum_data.tolist())
 
 
 if __name__ == "__main__":

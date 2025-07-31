@@ -81,7 +81,7 @@ class SignalCheckWidget(QGroupBox):
 
         # 获取检查类型并发送信号
         if self.stability_radio.isChecked():
-            self.comm_manager.start_check_stability()
+            self.comm_manager.check_light_stability()
         elif self.accuracy_radio.isChecked():
             self.comm_manager.start_check_accuracy()
         elif self.repeatability_radio.isChecked():
@@ -96,6 +96,6 @@ class SignalCheckWidget(QGroupBox):
         self.stop_btn.setEnabled(False)
         self._is_checking = False
 
-        self.comm_manager.stop_check()
+        self.comm_manager.check_stop()
 
         self.check_stopped.emit()
