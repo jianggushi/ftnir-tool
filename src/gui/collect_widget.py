@@ -4,6 +4,9 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QGroupBox,
+    QLabel,
+    QRadioButton,
+    QLineEdit,
 )
 from PySide6.QtCore import Signal, Slot, QTimer
 
@@ -25,8 +28,29 @@ class CollectWidget(QGroupBox):
 
     def setup_ui(self):
         """设置UI布局"""
-        layout = QVBoxLayout()
-        self.setLayout(layout)
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        collect_type_layout = QHBoxLayout()
+        collect_type_layout.addWidget(QLabel("类型："))
+        collect_type_layout.addWidget(QRadioButton("暗噪声"))
+        collect_type_layout.addWidget(QRadioButton("背景"))
+        collect_type_layout.addWidget(QRadioButton("样品"))
+
+        main_layout.addLayout(collect_type_layout)
+
+        collect_mode_layout = QHBoxLayout()
+        collect_mode_layout.addWidget(QLabel("模式："))
+        collect_mode_layout.addWidget(QRadioButton("单次"))
+        collect_mode_layout.addWidget(QRadioButton("连续"))
+
+        main_layout.addLayout(collect_mode_layout)
+
+        collect_num_layout = QHBoxLayout()
+        collect_num_layout.addWidget(QLabel("次数："))
+        collect_num_layout.addWidget(QLineEdit())
+
+        main_layout.addLayout(collect_num_layout)
 
         # 按钮布局
         button_layout = QHBoxLayout()
@@ -45,7 +69,7 @@ class CollectWidget(QGroupBox):
         button_layout.addWidget(self.stop_button)
 
         # 添加按钮布局到主布局
-        layout.addLayout(button_layout)
+        main_layout.addLayout(button_layout)
 
     @Slot()
     def start_collect(self):

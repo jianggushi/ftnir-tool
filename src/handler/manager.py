@@ -163,3 +163,15 @@ class CommManager:
 
     def check_stop(self):
         self._send_message(Command.CHECK_STOP, b"\03")
+
+    def turn_on_light(self):
+        self._send_message(Command.TURN_ON_LIGHT)
+
+    def turn_off_light(self):
+        self._send_message(Command.TURN_OFF_LIGHT)
+
+    def turn_on_laser(self):
+        self._send_message(Command.TURN_ON_LASER)
+
+    def turn_off_laser(self):
+        self._send_message(Command.TURN_OFF_LASER)

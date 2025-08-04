@@ -1,13 +1,273 @@
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
+    QHBoxLayout,
+    QGridLayout,
+    QGroupBox,
+    QPushButton,
+    QComboBox,
+    QLabel,
+    QLineEdit,
+    QFrame,
+    QFormLayout,
 )
-from PySide6.QtCore import Slot
+from PySide6.QtCore import Slot, Signal
 
 from handler.manager import CommManager
-from .communication_widget import CommunicationWidget
 from .signal_widget import SignalCheckWidget
 from .collect_widget import CollectWidget
+
+
+class CommunicationWidget(QGroupBox):
+    connected = Signal()
+    disconnected = Signal()
+
+    def __init__(self, comm_manager: CommManager):
+        super().__init__("通信设置")
+        self.comm_manager = comm_manager
+        self.setup_ui()
+
+    def setup_ui(self):
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        # port layout
+        self.port_combo = QComboBox()
+        self.refresh_button = QPushButton("刷新")
+        port_layout = QHBoxLayout()
+        port_layout.addWidget(QLabel("端口："))
+        port_layout.addWidget(self.port_combo)
+        port_layout.addWidget(self.refresh_button)
+
+        main_layout.addLayout(port_layout)
+
+        # button layout
+        self.connect_btn = QPushButton("连接")
+        self.disconnect_btn = QPushButton("断开")
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.connect_btn)
+        button_layout.addWidget(self.disconnect_btn)
+
+        main_layout.addLayout(button_layout)
+
+        # connect signals
+        self.connect_btn.clicked.connect(self.on_connect)
+        self.disconnect_btn.clicked.connect(self.on_disconnect)
+        self.disconnect_btn.setEnabled(False)
+        self.refresh_button.clicked.connect(self.refresh_ports)
+
+    @Slot()
+    def on_connect(self):
+        self.connect_btn.setEnabled(False)
+        self.disconnect_btn.setEnabled(True)
+        self.connected.emit()
+
+    @Slot()
+    def on_disconnect(self):
+        self.connect_btn.setEnabled(True)
+        self.disconnect_btn.setEnabled(False)
+        self.disconnected.emit()
+
+    def refresh_ports(self):
+        self.port_combo.clear()
+        ports = self.comm_manager.list_ports()
+        self.port_combo.addItems(ports)
+
+
+class LightWidget(QGroupBox):
+    def __init__(self, comm_manager: CommManager):
+        super().__init__("光源/激光控制")
+
+        self.comm_manager = comm_manager
+        self.light_on = False
+        self.laser_on = False
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        light_layout = QHBoxLayout()
+        self.light_button = QPushButton(self.light_text)
+        light_layout.addWidget(self.light_button)
+        self.laser_button = QPushButton(self.laser_text)
+        light_layout.addWidget(self.laser_button)
+
+        main_layout.addLayout(light_layout)
+
+        self.light_button.clicked.connect(self.on_light_toggle)
+        self.laser_button.clicked.connect(self.on_laser_toggle)
+
+    @property
+    def light_text(self) -> str:
+        if self.light_on:
+            return "关闭光源"
+        else:
+            return "打开光源"
+
+    @property
+    def laser_text(self) -> str:
+        if self.laser_on:
+            return "关闭激光"
+        else:
+            return "打开激光"
+
+    def turn_on_light(self):
+        self.light_on = True
+        self.light_button.setText(self.light_text)
+        self.comm_manager.turn_on_light()
+
+    def turn_off_light(self):
+        self.light_on = False
+        self.light_button.setText(self.light_text)
+        self.comm_manager.turn_off_light()
+
+    @Slot()
+    def on_light_toggle(self):
+        if self.light_on:
+            self.turn_off_light()
+        else:
+            self.turn_on_light()
+
+    def turn_on_laser(self):
+        self.laser_on = True
+        self.laser_button.setText(self.laser_text)
+        self.comm_manager.turn_on_laser()
+
+    def turn_off_laser(self):
+        self.laser_on = False
+        self.laser_button.setText(self.laser_text)
+        self.comm_manager.turn_off_laser()
+
+    @Slot()
+    def on_laser_toggle(self):
+        if self.laser_on:
+            self.turn_off_laser()
+        else:
+            self.turn_on_laser()
+
+
+class RotateMotorWidget(QGroupBox):
+    def __init__(self):
+        super().__init__("旋转电机")
+        self.setup_ui()
+
+    def setup_ui(self):
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        rotate_layout = QVBoxLayout()
+
+        rotate_offset_layout = QHBoxLayout()
+        rotate_offset_layout.addWidget(QLabel("偏移(步数):"))
+        rotate_offset_layout.addWidget(QLineEdit("0"))
+        rotate_offset_layout.addWidget(QPushButton("设置偏移"))
+        rotate_layout.addLayout(rotate_offset_layout)
+
+        rotate_layout.addWidget(QLabel("控制:"))
+        rotate_channel_layout = QGridLayout()
+        rotate_channel_layout.addWidget(QPushButton("1"), 0, 0)
+        rotate_channel_layout.addWidget(QPushButton("2"), 0, 1)
+        rotate_channel_layout.addWidget(QPushButton("3"), 0, 2)
+        rotate_channel_layout.addWidget(QPushButton("4"), 0, 3)
+        rotate_channel_layout.addWidget(QPushButton("5"), 1, 0)
+        rotate_channel_layout.addWidget(QPushButton("6"), 1, 1)
+        rotate_channel_layout.addWidget(QPushButton("复位"), 1, 2)
+        rotate_layout.addLayout(rotate_channel_layout)
+
+        main_layout.addLayout(rotate_layout)
+
+
+class ScrewMotorWidget(QGroupBox):
+    def __init__(self):
+        super().__init__("丝杆电机")
+        self.setup_ui()
+
+    def setup_ui(self):
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        screw_layout = QVBoxLayout()
+
+        screw_offset_layout = QHBoxLayout()
+        screw_offset_layout.addWidget(QLabel("偏移(距离mm):"))
+        screw_offset_layout.addWidget(QLineEdit("0.0"))
+        screw_offset_layout.addWidget(QPushButton("设置偏移"))
+        screw_layout.addLayout(screw_offset_layout)
+
+        screw_layout.addWidget(QLabel("控制:"))
+        screw_channel_layout = QGridLayout()
+        screw_channel_layout.addWidget(QPushButton("1"), 0, 0)
+        screw_channel_layout.addWidget(QPushButton("2"), 0, 1)
+        screw_channel_layout.addWidget(QPushButton("3"), 0, 2)
+        screw_channel_layout.addWidget(QPushButton("4"), 0, 3)
+        screw_channel_layout.addWidget(QPushButton("5"), 1, 0)
+        screw_channel_layout.addWidget(QPushButton("6"), 1, 1)
+        screw_channel_layout.addWidget(QPushButton("7"), 1, 2)
+        screw_channel_layout.addWidget(QPushButton("8"), 1, 3)
+        screw_channel_layout.addWidget(QPushButton("复位"), 2, 0)
+        screw_layout.addLayout(screw_channel_layout)
+
+        main_layout.addLayout(screw_layout)
+
+        # Add more controls as needed
+        # e.g., buttons, sliders, etc.
+
+
+class HardwareSettingWidget(QGroupBox):
+    def __init__(self):
+        super().__init__("硬件设置")
+        self.setup_ui()
+
+    def setup_ui(self):
+        main_layout = QVBoxLayout()
+        self.setLayout(main_layout)
+
+        # Hardware settings form
+        hardware_form = QFormLayout()
+
+        # 分辨率
+        self.resolution_combo = QComboBox()
+        resolution_options = ["0.2", "0.4", "0.8", "1.0", "2.0"]
+        self.resolution_combo.addItems(resolution_options)
+        self.resolution_combo.setCurrentText("0.4")
+        hardware_form.addRow(QLabel("分辨率:"), self.resolution_combo)
+
+        # 动镜速度
+        self.velocity_combo = QComboBox()
+        velocity_options = ["200", "300", "500", "1000", "2000", "3000"]
+        self.velocity_combo.addItems(velocity_options)
+        self.velocity_combo.setCurrentText("300")
+        hardware_form.addRow(QLabel("动镜速度:"), self.velocity_combo)
+
+        # 采样方向
+        self.direction_combo = QComboBox()
+        direction_options = ["正向", "反向"]
+        self.direction_combo.addItems(direction_options)
+        self.direction_combo.setCurrentText("正向")
+        hardware_form.addRow(QLabel("采样方向:"), self.direction_combo)
+
+        # 扫描模式
+        self.scan_mode_combo = QComboBox()
+        scan_mode_options = ["单向-单边", "单向-双边", "双向-单边", "双向-双边"]
+        self.scan_mode_combo.addItems(scan_mode_options)
+        self.scan_mode_combo.setCurrentText("单向-单边")
+        hardware_form.addRow(QLabel("扫描模式:"), self.scan_mode_combo)
+
+        main_layout.addLayout(hardware_form)
+
+        # Buttons
+        button_layout = QHBoxLayout()
+        self.save_button = QPushButton("保存")
+        self.cancel_button = QPushButton("取消")
+        button_layout.addWidget(self.save_button)
+        button_layout.addWidget(self.cancel_button)
+        main_layout.addLayout(button_layout)
+
+        # Connect buttons
+        # self.save_button.clicked.connect(self.save_settings)
+        # self.cancel_button.clicked.connect(self.reject)
 
 
 class ControlWidget(QWidget):
@@ -23,14 +283,33 @@ class ControlWidget(QWidget):
         self.setLayout(main_layout)
 
         # Add communication widget
-        self.comm_widget = CommunicationWidget()
+        self.comm_widget = CommunicationWidget(self.comm_manager)
         self.comm_widget.connected.connect(self.on_connect)
         self.comm_widget.disconnected.connect(self.on_disconnect)
+
+        main_layout.addWidget(self.comm_widget)
+
+        light_widget = LightWidget(self.comm_manager)
+        main_layout.addWidget(light_widget)
+
+        # laser_widget = LaserWidget()
+        # main_layout.addWidget(laser_widget)
+
+        rotate_widget = RotateMotorWidget()
+        main_layout.addWidget(rotate_widget)
+
+        screw_widget = ScrewMotorWidget()
+        main_layout.addWidget(screw_widget)
 
         # Add signal check widget
         self.signal_widget = SignalCheckWidget(self.comm_manager)
         self.signal_widget.check_started.connect(self.on_check_start)
         self.signal_widget.check_stopped.connect(self.on_check_stop)
+
+        # main_layout.addWidget(self.signal_widget)
+
+        hardware_widget = HardwareSettingWidget()
+        main_layout.addWidget(hardware_widget)
 
         # Add collect widget
         self.collect_widget = CollectWidget()
@@ -39,8 +318,7 @@ class ControlWidget(QWidget):
         )  # 连接采集数据信号
 
         # Add widgets to main layout
-        main_layout.addWidget(self.comm_widget)
-        main_layout.addWidget(self.signal_widget)
+
         main_layout.addWidget(self.collect_widget)
         main_layout.addStretch()
 

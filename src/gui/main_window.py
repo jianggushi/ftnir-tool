@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QMenu,
     QSplitter,
+    QLabel,
 )
 from PySide6.QtCore import Qt
 
@@ -64,7 +65,7 @@ class MainWindow(QMainWindow):
         splitter.addWidget(right_panel)
 
         # Set initial splitter sizes (30% left, 70% right)
-        splitter.setSizes([200, 800])
+        splitter.setSizes([220, 780])
 
     def setup_menu(self):
         # Create menu bar
@@ -114,4 +115,10 @@ class MainWindow(QMainWindow):
         self.signal_widget.exec()
 
     def setup_status_bar(self):
-        pass
+        status_bar = self.statusBar()
+
+        status_bar.addWidget(QLabel("连接状态：未连接"))
+        status_bar.addWidget(QLabel("光源状态：未打开"))
+        status_bar.addWidget(QLabel("激光状态：未打开"))
+        status_bar.addWidget(QLabel("温度：--"))
+        status_bar.addWidget(QLabel("湿度：--"))
