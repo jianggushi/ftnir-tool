@@ -1,12 +1,15 @@
+import threading
+import logging
+import time
+import struct
+from typing import Callable
+
 from comm.transport.transport import ITransport
 from comm.transport.serial import SerialTransport
 from comm.protocol.parser import MessageParser
 from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
-import threading
-import logging
-import time
-from typing import Callable
+
 from .base import MessageHandler
 from .light_stablity import LightStabilityHandler
 
@@ -90,9 +93,12 @@ class CommManager:
             Command.CHECK_LIGHT_STABILITY_RES: self.light_stability_handler,
         }
 
-    def connect(self):
+    def connect(self, **kwargs):
+        print(kwargs)
         try:
             if not self.transport.is_open:
+                port = kwargs.get("port", "")
+                self.transport.set_port(port)
                 self.transport.open()
                 self._connected = True
             # 开始握手
@@ -175,3 +181,16 @@ class CommManager:
 
     def turn_off_laser(self):
         self._send_message(Command.TURN_OFF_LASER)
+
+    def set_rotate_offset(self, offset: int):
+        self._send_message(Command.SET_ROTATE_OFFSET, struct.pack(">B", offset))
+
+    def set_rotate_target(self, target: int):
+        self._send_message(Command.SET_ROTATE_TARGET, struct.pack(">B", target))
+
+    def set_screw_offset(self, offset: float):
+
+        self._send_message(Command.SET_SCREW_OFFSET, struct.pack(">f", offset))
+
+    def set_screw_target(self, target: int):
+        self._send_message(Command.SET_SCREW_TARGET, struct.pack(">B", target))

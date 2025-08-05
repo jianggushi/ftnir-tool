@@ -21,7 +21,21 @@ class Command(enum.IntEnum):
     START_COLLECT = 0x10
     STOP_COLLECT = 0x11
 
-    TURN_ON_LIGHT = 0x0301  # 打开光源
-    TURN_OFF_LIGHT = 0x0302  # 关闭光源
-    TURN_ON_LASER = 0x0303  # 打开激光
-    TURN_OFF_LASER = 0x0304  # 关闭激光
+    # 打开光源
+    TURN_ON_LIGHT = 0x0301
+    # 关闭光源
+    TURN_OFF_LIGHT = 0x0302
+    # 打开激光
+    TURN_ON_LASER = 0x0303
+    # 关闭激光
+    TURN_OFF_LASER = 0x0304
+
+    # 设置旋转电机偏移量
+    SET_ROTATE_OFFSET = 0x0310
+    # 设置旋转电机目标位置
+    SET_ROTATE_TARGET = 0x0311
+
+    # 设置丝杆电机偏移量
+    SET_SCREW_OFFSET = 0x0312
+    # 设置丝杆电机目标位置
+    SET_SCREW_TARGET = 0x0313

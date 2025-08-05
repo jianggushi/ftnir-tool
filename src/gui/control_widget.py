@@ -10,6 +10,8 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QFrame,
     QFormLayout,
+    QSpinBox,
+    QDoubleSpinBox,
 )
 from PySide6.QtCore import Slot, Signal
 
@@ -19,13 +21,14 @@ from .collect_widget import CollectWidget
 
 
 class CommunicationWidget(QGroupBox):
-    connected = Signal()
-    disconnected = Signal()
 
     def __init__(self, comm_manager: CommManager):
         super().__init__("通信设置")
+
         self.comm_manager = comm_manager
+
         self.setup_ui()
+        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
@@ -50,7 +53,7 @@ class CommunicationWidget(QGroupBox):
 
         main_layout.addLayout(button_layout)
 
-        # connect signals
+    def setup_signals(self):
         self.connect_btn.clicked.connect(self.on_connect)
         self.disconnect_btn.clicked.connect(self.on_disconnect)
         self.disconnect_btn.setEnabled(False)
@@ -60,14 +63,16 @@ class CommunicationWidget(QGroupBox):
     def on_connect(self):
         self.connect_btn.setEnabled(False)
         self.disconnect_btn.setEnabled(True)
-        self.connected.emit()
+        port = self.port_combo.currentText()
+        self.comm_manager.connect(port=port)
 
     @Slot()
     def on_disconnect(self):
         self.connect_btn.setEnabled(True)
         self.disconnect_btn.setEnabled(False)
-        self.disconnected.emit()
+        self.comm_manager.disconnect()
 
+    @Slot()
     def refresh_ports(self):
         self.port_combo.clear()
         ports = self.comm_manager.list_ports()
@@ -83,6 +88,7 @@ class LightWidget(QGroupBox):
         self.laser_on = False
 
         self.setup_ui()
+        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
@@ -96,6 +102,7 @@ class LightWidget(QGroupBox):
 
         main_layout.addLayout(light_layout)
 
+    def setup_signals(self):
         self.light_button.clicked.connect(self.on_light_toggle)
         self.laser_button.clicked.connect(self.on_laser_toggle)
 
@@ -149,70 +156,169 @@ class LightWidget(QGroupBox):
 
 
 class RotateMotorWidget(QGroupBox):
-    def __init__(self):
+    def __init__(self, comm_manager: CommManager):
         super().__init__("旋转电机")
+
+        self.comm_manager = comm_manager
+
         self.setup_ui()
+        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        rotate_layout = QVBoxLayout()
+        offset_layout = QHBoxLayout()
+        self.offset_spinbox = QSpinBox(minimum=0, singleStep=1)
+        self.offset_button = QPushButton("设置偏移")
+        offset_layout.addWidget(QLabel("偏移(步数):"))
+        offset_layout.addWidget(self.offset_spinbox)
+        offset_layout.addWidget(self.offset_button)
 
-        rotate_offset_layout = QHBoxLayout()
-        rotate_offset_layout.addWidget(QLabel("偏移(步数):"))
-        rotate_offset_layout.addWidget(QLineEdit("0"))
-        rotate_offset_layout.addWidget(QPushButton("设置偏移"))
-        rotate_layout.addLayout(rotate_offset_layout)
+        main_layout.addLayout(offset_layout)
+        main_layout.addWidget(QLabel("目标:"))
 
-        rotate_layout.addWidget(QLabel("控制:"))
-        rotate_channel_layout = QGridLayout()
-        rotate_channel_layout.addWidget(QPushButton("1"), 0, 0)
-        rotate_channel_layout.addWidget(QPushButton("2"), 0, 1)
-        rotate_channel_layout.addWidget(QPushButton("3"), 0, 2)
-        rotate_channel_layout.addWidget(QPushButton("4"), 0, 3)
-        rotate_channel_layout.addWidget(QPushButton("5"), 1, 0)
-        rotate_channel_layout.addWidget(QPushButton("6"), 1, 1)
-        rotate_channel_layout.addWidget(QPushButton("复位"), 1, 2)
-        rotate_layout.addLayout(rotate_channel_layout)
+        target_layout = QGridLayout()
+        self.target_1_button = QPushButton("1")
+        self.target_2_button = QPushButton("2")
+        self.target_3_button = QPushButton("3")
+        self.target_4_button = QPushButton("4")
+        self.target_5_button = QPushButton("5")
+        self.target_6_button = QPushButton("6")
+        self.target_reset_button = QPushButton("复位")
+        target_layout.addWidget(self.target_1_button, 0, 0)
+        target_layout.addWidget(self.target_2_button, 0, 1)
+        target_layout.addWidget(self.target_3_button, 0, 2)
+        target_layout.addWidget(self.target_4_button, 0, 3)
+        target_layout.addWidget(self.target_5_button, 1, 0)
+        target_layout.addWidget(self.target_6_button, 1, 1)
+        target_layout.addWidget(self.target_reset_button, 1, 2)
 
-        main_layout.addLayout(rotate_layout)
+        main_layout.addLayout(target_layout)
+
+    def setup_signals(self):
+        self.offset_button.clicked.connect(self.on_offset_set)
+        self.target_1_button.clicked.connect(self.on_target_1_set)
+        self.target_2_button.clicked.connect(self.on_target_2_set)
+        self.target_3_button.clicked.connect(self.on_target_3_set)
+        self.target_4_button.clicked.connect(self.on_target_4_set)
+        self.target_5_button.clicked.connect(self.on_target_5_set)
+        self.target_6_button.clicked.connect(self.on_target_6_set)
+        self.target_reset_button.clicked.connect(self.on_target_reset_set)
+
+    def on_offset_set(self):
+        offset = self.offset_spinbox.value()
+        self.comm_manager.set_rotate_offset(offset)
+
+    def on_target_1_set(self):
+        self.comm_manager.set_rotate_target(1)
+
+    def on_target_2_set(self):
+        self.comm_manager.set_rotate_target(2)
+
+    def on_target_3_set(self):
+        self.comm_manager.set_rotate_target(3)
+
+    def on_target_4_set(self):
+        self.comm_manager.set_rotate_target(4)
+
+    def on_target_5_set(self):
+        self.comm_manager.set_rotate_target(5)
+
+    def on_target_6_set(self):
+        self.comm_manager.set_rotate_target(6)
+
+    def on_target_reset_set(self):
+        self.comm_manager.set_rotate_target(0)
 
 
 class ScrewMotorWidget(QGroupBox):
-    def __init__(self):
+    def __init__(self, comm_manager: CommManager):
         super().__init__("丝杆电机")
+
+        self.comm_manager = comm_manager
+
         self.setup_ui()
+        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        screw_layout = QVBoxLayout()
+        offset_layout = QHBoxLayout()
+        self.offset_spinbox = QDoubleSpinBox(minimum=0.00, singleStep=0.01)
+        self.offset_button = QPushButton("设置偏移")
+        offset_layout.addWidget(QLabel("偏移(距离mm):"))
+        offset_layout.addWidget(self.offset_spinbox)
+        offset_layout.addWidget(self.offset_button)
 
-        screw_offset_layout = QHBoxLayout()
-        screw_offset_layout.addWidget(QLabel("偏移(距离mm):"))
-        screw_offset_layout.addWidget(QLineEdit("0.0"))
-        screw_offset_layout.addWidget(QPushButton("设置偏移"))
-        screw_layout.addLayout(screw_offset_layout)
+        main_layout.addLayout(offset_layout)
+        main_layout.addWidget(QLabel("目标:"))
 
-        screw_layout.addWidget(QLabel("控制:"))
-        screw_channel_layout = QGridLayout()
-        screw_channel_layout.addWidget(QPushButton("1"), 0, 0)
-        screw_channel_layout.addWidget(QPushButton("2"), 0, 1)
-        screw_channel_layout.addWidget(QPushButton("3"), 0, 2)
-        screw_channel_layout.addWidget(QPushButton("4"), 0, 3)
-        screw_channel_layout.addWidget(QPushButton("5"), 1, 0)
-        screw_channel_layout.addWidget(QPushButton("6"), 1, 1)
-        screw_channel_layout.addWidget(QPushButton("7"), 1, 2)
-        screw_channel_layout.addWidget(QPushButton("8"), 1, 3)
-        screw_channel_layout.addWidget(QPushButton("复位"), 2, 0)
-        screw_layout.addLayout(screw_channel_layout)
+        target_layout = QGridLayout()
+        self.target_1_button = QPushButton("1")
+        self.target_2_button = QPushButton("2")
+        self.target_3_button = QPushButton("3")
+        self.target_4_button = QPushButton("4")
+        self.target_5_button = QPushButton("5")
+        self.target_6_button = QPushButton("6")
+        self.target_7_button = QPushButton("7")
+        self.target_8_button = QPushButton("8")
+        self.target_reset_button = QPushButton("复位")
+        target_layout.addWidget(self.target_1_button, 0, 0)
+        target_layout.addWidget(self.target_2_button, 0, 1)
+        target_layout.addWidget(self.target_3_button, 0, 2)
+        target_layout.addWidget(self.target_4_button, 0, 3)
+        target_layout.addWidget(self.target_5_button, 1, 0)
+        target_layout.addWidget(self.target_6_button, 1, 1)
+        target_layout.addWidget(self.target_7_button, 1, 2)
+        target_layout.addWidget(self.target_8_button, 1, 3)
+        target_layout.addWidget(self.target_reset_button, 2, 0)
 
-        main_layout.addLayout(screw_layout)
+        main_layout.addLayout(target_layout)
 
-        # Add more controls as needed
-        # e.g., buttons, sliders, etc.
+    def setup_signals(self):
+        self.offset_button.clicked.connect(self.on_offset_set)
+        self.target_1_button.clicked.connect(self.on_target_1_set)
+        self.target_2_button.clicked.connect(self.on_target_2_set)
+        self.target_3_button.clicked.connect(self.on_target_3_set)
+        self.target_4_button.clicked.connect(self.on_target_4_set)
+        self.target_5_button.clicked.connect(self.on_target_5_set)
+        self.target_6_button.clicked.connect(self.on_target_6_set)
+        self.target_7_button.clicked.connect(self.on_target_7_set)
+        self.target_8_button.clicked.connect(self.on_target_8_set)
+        self.target_reset_button.clicked.connect(self.on_target_reset_set)
+
+    def on_offset_set(self):
+        offset = self.offset_spinbox.value()
+        self.comm_manager.set_screw_offset(offset)
+
+    def on_target_1_set(self):
+        self.comm_manager.set_screw_target(1)
+
+    def on_target_2_set(self):
+        self.comm_manager.set_screw_target(2)
+
+    def on_target_3_set(self):
+        self.comm_manager.set_screw_target(3)
+
+    def on_target_4_set(self):
+        self.comm_manager.set_screw_target(4)
+
+    def on_target_5_set(self):
+        self.comm_manager.set_screw_target(5)
+
+    def on_target_6_set(self):
+        self.comm_manager.set_screw_target(6)
+
+    def on_target_7_set(self):
+        self.comm_manager.set_screw_target(7)
+
+    def on_target_8_set(self):
+        self.comm_manager.set_screw_target(8)
+
+    def on_target_reset_set(self):
+        self.comm_manager.set_screw_target(0)
 
 
 class HardwareSettingWidget(QGroupBox):
@@ -284,21 +390,15 @@ class ControlWidget(QWidget):
 
         # Add communication widget
         self.comm_widget = CommunicationWidget(self.comm_manager)
-        self.comm_widget.connected.connect(self.on_connect)
-        self.comm_widget.disconnected.connect(self.on_disconnect)
-
         main_layout.addWidget(self.comm_widget)
 
         light_widget = LightWidget(self.comm_manager)
         main_layout.addWidget(light_widget)
 
-        # laser_widget = LaserWidget()
-        # main_layout.addWidget(laser_widget)
-
-        rotate_widget = RotateMotorWidget()
+        rotate_widget = RotateMotorWidget(self.comm_manager)
         main_layout.addWidget(rotate_widget)
 
-        screw_widget = ScrewMotorWidget()
+        screw_widget = ScrewMotorWidget(self.comm_manager)
         main_layout.addWidget(screw_widget)
 
         # Add signal check widget
@@ -321,16 +421,6 @@ class ControlWidget(QWidget):
 
         main_layout.addWidget(self.collect_widget)
         main_layout.addStretch()
-
-    @Slot()
-    def on_connect(self):
-        # Handle connection event
-        self.comm_manager.connect()
-
-    @Slot()
-    def on_disconnect(self):
-        # Handle disconnection event
-        self.comm_manager.disconnect()
 
     @Slot()
     def on_check_start(self):
