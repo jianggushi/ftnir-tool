@@ -25,9 +25,9 @@ class InterferenceFigureWidget(QWidget):
         self._init_plot()
 
         self.comm_manager = comm_manager
-        self.comm_manager.light_stability_handler.add_callback(
-            self.on_receive_spectrum_data
-        )
+        # self.comm_manager.light_stability_handler.add_callback(
+        #     self.on_receive_spectrum_data
+        # )
 
         # 数据缓存
         self._x_data = []

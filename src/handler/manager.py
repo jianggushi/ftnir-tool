@@ -194,3 +194,6 @@ class CommManager:
 
     def set_screw_target(self, target: int):
         self._send_message(Command.SET_SCREW_TARGET, struct.pack(">B", target))
+
+    def set_hardware_setting(self, setting: int):
+        self._send_message(Command.SET_HARDWARE_SETTING, struct.pack(">B", setting))

@@ -1,8 +1,10 @@
 import logging
 import time
 import numpy as np
+from collections import deque
 
 from comm.protocol.parser import RawMessage, Command
+from model.spectrum import SpectrumData
 from .interference import InterferenceHandler
 from .processor.fft_processor import FFTProcessor
 
@@ -13,6 +15,8 @@ class LightStabilityHandler(InterferenceHandler):
     def __init__(self):
         super().__init__()
         self._fft_processor = FFTProcessor()
+
+        self._data_buffer = deque(maxlen=100)
 
     def handle(self, msg: RawMessage):
         if msg.command != Command.CHECK_LIGHT_STABILITY_RES:
@@ -28,12 +32,8 @@ class LightStabilityHandler(InterferenceHandler):
             np.savetxt(filename, interference_data, fmt="%.6f", delimiter=",")
 
             # run callbacks
-            self._run_callbacks(
-                {
-                    "interference_data": interference_data,
-                    "spectrum_data": spectrum_data,
-                }
-            )
+            spectrum_data = SpectrumData(interference_data, spectrum_data)
+            self._run_callbacks(spectrum_data)
         except Exception as e:
             logger.error(f"failed to handle message {msg.command}: {e}")
 

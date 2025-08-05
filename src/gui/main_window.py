@@ -18,7 +18,7 @@ from .setting_widget import (
     CollectSettingWidget,
     CommunicationSettingWidget,
 )
-from .signal_widget2 import SignalWidget
+from .signal_widget import SignalWidget
 
 
 class MainWindow(QMainWindow):

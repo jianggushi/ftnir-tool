@@ -6,6 +6,7 @@ from typing import Callable
 
 from .base import MessageHandler
 from comm.protocol.parser import RawMessage, Command
+from model.spectrum import SpectrumData
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class InterferenceHandler(MessageHandler):
     def clear_callbacks(self):
         self._callbacks.clear()
 
-    def _run_callbacks(self, data: map):
+    def _run_callbacks(self, data: SpectrumData):
         for callback in self._callbacks:
             try:
                 callback(data)

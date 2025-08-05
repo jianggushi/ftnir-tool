@@ -27,9 +27,12 @@ class SlaveManager:
 
         self._connected = False
 
+        self.check_light_stability_running = False
+
         self._message_handlers: dict[Command, Callable[[RawMessage], None]] = {
             Command.HANDSHAKE_REQ: self.receive_handshake_req,
             Command.CHECK_LIGHT_STABILITY: self.receive_check_light_stability,
+            Command.CHECK_STOP: self.receive_check_stop,
         }
 
     def connect(self):
@@ -85,17 +88,21 @@ class SlaveManager:
         """处理光源稳定性检测请求"""
         if raw_message.command != Command.CHECK_LIGHT_STABILITY:
             return
-        # 这里可以添加处理逻辑
-        t, sig, freq = generate_test_signal()
-        test_data = sig.tolist()
-        data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
-        self._send_message(Command.CHECK_LIGHT_STABILITY_RES, data_bytes)
+
+        self.check_light_stability_running = True
+
+        while self.check_light_stability_running:
+            t, sig, freq = generate_test_signal()
+            test_data = sig.tolist()
+            data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
+            self._send_message(Command.CHECK_LIGHT_STABILITY_RES, data_bytes)
+            time.sleep(0.1)
 
     def receive_check_stop(self, raw_message: RawMessage):
         """处理停止检测请求"""
         if raw_message.command != Command.CHECK_LIGHT_STABILITY:
             return
-        pass
+        self.check_light_stability_running = False
 
 
 def run():

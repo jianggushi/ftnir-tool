@@ -39,3 +39,6 @@ class Command(enum.IntEnum):
     SET_SCREW_OFFSET = 0x0312
     # 设置丝杆电机目标位置
     SET_SCREW_TARGET = 0x0313
+
+    # 设置硬件配置
+    SET_HARDWARE_SETTING = 0x03F0

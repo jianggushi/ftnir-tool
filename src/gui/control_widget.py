@@ -13,10 +13,9 @@ from PySide6.QtWidgets import (
     QSpinBox,
     QDoubleSpinBox,
 )
-from PySide6.QtCore import Slot, Signal
+from PySide6.QtCore import Slot
 
 from handler.manager import CommManager
-from .signal_widget import SignalCheckWidget
 from .collect_widget import CollectWidget
 
 
@@ -206,28 +205,36 @@ class RotateMotorWidget(QGroupBox):
         self.target_6_button.clicked.connect(self.on_target_6_set)
         self.target_reset_button.clicked.connect(self.on_target_reset_set)
 
+    @Slot()
     def on_offset_set(self):
         offset = self.offset_spinbox.value()
         self.comm_manager.set_rotate_offset(offset)
 
+    @Slot()
     def on_target_1_set(self):
         self.comm_manager.set_rotate_target(1)
 
+    @Slot()
     def on_target_2_set(self):
         self.comm_manager.set_rotate_target(2)
 
+    @Slot()
     def on_target_3_set(self):
         self.comm_manager.set_rotate_target(3)
 
+    @Slot()
     def on_target_4_set(self):
         self.comm_manager.set_rotate_target(4)
 
+    @Slot()
     def on_target_5_set(self):
         self.comm_manager.set_rotate_target(5)
 
+    @Slot()
     def on_target_6_set(self):
         self.comm_manager.set_rotate_target(6)
 
+    @Slot()
     def on_target_reset_set(self):
         self.comm_manager.set_rotate_target(0)
 
@@ -289,48 +296,61 @@ class ScrewMotorWidget(QGroupBox):
         self.target_8_button.clicked.connect(self.on_target_8_set)
         self.target_reset_button.clicked.connect(self.on_target_reset_set)
 
+    @Slot()
     def on_offset_set(self):
         offset = self.offset_spinbox.value()
         self.comm_manager.set_screw_offset(offset)
 
+    @Slot()
     def on_target_1_set(self):
         self.comm_manager.set_screw_target(1)
 
+    @Slot()
     def on_target_2_set(self):
         self.comm_manager.set_screw_target(2)
 
+    @Slot()
     def on_target_3_set(self):
         self.comm_manager.set_screw_target(3)
 
+    @Slot()
     def on_target_4_set(self):
         self.comm_manager.set_screw_target(4)
 
+    @Slot()
     def on_target_5_set(self):
         self.comm_manager.set_screw_target(5)
 
+    @Slot()
     def on_target_6_set(self):
         self.comm_manager.set_screw_target(6)
 
+    @Slot()
     def on_target_7_set(self):
         self.comm_manager.set_screw_target(7)
 
+    @Slot()
     def on_target_8_set(self):
         self.comm_manager.set_screw_target(8)
 
+    @Slot()
     def on_target_reset_set(self):
         self.comm_manager.set_screw_target(0)
 
 
 class HardwareSettingWidget(QGroupBox):
-    def __init__(self):
+    def __init__(self, comm_manager: CommManager):
         super().__init__("硬件设置")
+
+        self.comm_manager = comm_manager
+
         self.setup_ui()
+        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        # Hardware settings form
         hardware_form = QFormLayout()
 
         # 分辨率
@@ -369,11 +389,16 @@ class HardwareSettingWidget(QGroupBox):
         self.cancel_button = QPushButton("取消")
         button_layout.addWidget(self.save_button)
         button_layout.addWidget(self.cancel_button)
+
         main_layout.addLayout(button_layout)
 
-        # Connect buttons
-        # self.save_button.clicked.connect(self.save_settings)
-        # self.cancel_button.clicked.connect(self.reject)
+    def setup_signals(self):
+        self.save_button.clicked.connect(self.on_save_settings)
+
+    @Slot()
+    def on_save_settings(self):
+        # 保存设置
+        pass
 
 
 class ControlWidget(QWidget):
@@ -401,14 +426,7 @@ class ControlWidget(QWidget):
         screw_widget = ScrewMotorWidget(self.comm_manager)
         main_layout.addWidget(screw_widget)
 
-        # Add signal check widget
-        self.signal_widget = SignalCheckWidget(self.comm_manager)
-        self.signal_widget.check_started.connect(self.on_check_start)
-        self.signal_widget.check_stopped.connect(self.on_check_stop)
-
-        # main_layout.addWidget(self.signal_widget)
-
-        hardware_widget = HardwareSettingWidget()
+        hardware_widget = HardwareSettingWidget(self.comm_manager)
         main_layout.addWidget(hardware_widget)
 
         # Add collect widget
