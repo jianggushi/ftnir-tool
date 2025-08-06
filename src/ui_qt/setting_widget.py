@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QRadioButton,
 )
 
-from interfaces.qt.manager import CommManager
+from interfaces.qt.controller import QtController
 
 
 class HardwareSettingWidget(QDialog):
@@ -134,8 +134,8 @@ class CollectSettingWidget(QDialog):
 
 
 class CommunicationSettingWidget(QDialog):
-    def __init__(self, comm_manager: CommManager):
-        self.comm_manager = comm_manager
+    def __init__(self, qt_controller: QtController):
+        self.qt_controller = qt_controller
         super().__init__()
         self.setWindowTitle("通信设置")
         self.resize(600, 400)
@@ -173,11 +173,11 @@ class CommunicationSettingWidget(QDialog):
 
     def refresh_ports(self):
         self.port_combo.clear()
-        ports = self.comm_manager.list_ports()
+        ports = self.qt_controller.list_ports()
         self.port_combo.addItems(ports)
 
     def save_settings(self):
         # Placeholder for saving settings logic
         port = self.port_combo.currentText()
-        self.comm_manager.transport.set_port(port)
+        self.qt_controller.transport.set_port(port)
         self.accept()

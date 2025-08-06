@@ -18,15 +18,15 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Slot
 
-from interfaces.qt.manager import CommManager
+from interfaces.qt.controller import QtController
 from core.model.spectrum import SpectrumData
 from .interference_widget import InterferenceFigureWidget
 
 
 class SignalWidget(QDialog):
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
         super().__init__()
-        self.comm_manager = comm_manager
+        self.qt_controller = qt_controller
         self.setWindowTitle("信号检查")
         self.resize(1200, 800)
         self.setup_ui()
@@ -40,7 +40,7 @@ class SignalWidget(QDialog):
         main_layout.addWidget(self.tab_widget)
 
         # Create three tabs
-        self.tab_widget.addTab(LightStabilityWidget(self.comm_manager), "光源稳定性")
+        self.tab_widget.addTab(LightStabilityWidget(self.qt_controller), "光源稳定性")
         self.create_wavelength_accuracy_tab()
         self.create_wavelength_repeatability_tab()
 
@@ -233,11 +233,11 @@ class SignalWidget(QDialog):
 
 
 class LightStabilityWidget(QWidget):
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
         super().__init__()
 
-        self.comm_manager = comm_manager
-        self.comm_manager.light_stability_handler.add_callback(self.on_receive_data)
+        self.qt_controller = qt_controller
+        self.qt_controller.light_stability_handler.add_callback(self.on_receive_data)
 
         self.setup_ui()
         self.setup_signals()
@@ -305,7 +305,7 @@ class LightStabilityWidget(QWidget):
         chart_tab = QWidget()
         chart_layout = QVBoxLayout(chart_tab)
 
-        self.interference_widget = InterferenceFigureWidget(self.comm_manager)
+        self.interference_widget = InterferenceFigureWidget(self.qt_controller)
 
         chart_layout.addWidget(self.interference_widget)
 
@@ -332,12 +332,12 @@ class LightStabilityWidget(QWidget):
 
     @Slot()
     def on_start(self):
-        self.comm_manager.check_light_stability()
+        self.qt_controller.check_light_stability()
         self.start_button.setEnabled(False)
         self.stop_button.setEnabled(True)
 
     @Slot()
     def on_stop(self):
-        self.comm_manager.check_stop()
+        self.qt_controller.check_stop()
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)

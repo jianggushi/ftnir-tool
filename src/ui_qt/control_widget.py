@@ -15,16 +15,16 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Slot
 
-from interfaces.qt.manager import CommManager
+from interfaces.qt.controller import QtController
 from .collect_widget import CollectWidget
 
 
 class CommunicationWidget(QGroupBox):
 
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
         super().__init__("通信设置")
 
-        self.comm_manager = comm_manager
+        self.qt_controller = qt_controller
 
         self.setup_ui()
         self.setup_signals()
@@ -63,26 +63,26 @@ class CommunicationWidget(QGroupBox):
         self.connect_btn.setEnabled(False)
         self.disconnect_btn.setEnabled(True)
         port = self.port_combo.currentText()
-        self.comm_manager.connect(port=port)
+        self.qt_controller.connect(port=port)
 
     @Slot()
     def on_disconnect(self):
         self.connect_btn.setEnabled(True)
         self.disconnect_btn.setEnabled(False)
-        self.comm_manager.disconnect()
+        self.qt_controller.disconnect()
 
     @Slot()
     def refresh_ports(self):
         self.port_combo.clear()
-        ports = self.comm_manager.list_ports()
+        ports = self.qt_controller.list_ports()
         self.port_combo.addItems(ports)
 
 
 class LightWidget(QGroupBox):
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
         super().__init__("光源/激光控制")
 
-        self.comm_manager = comm_manager
+        self.qt_controller = qt_controller
         self.light_on = False
         self.laser_on = False
 
@@ -122,12 +122,12 @@ class LightWidget(QGroupBox):
     def turn_on_light(self):
         self.light_on = True
         self.light_button.setText(self.light_text)
-        self.comm_manager.turn_on_light()
+        self.qt_controller.turn_on_light()
 
     def turn_off_light(self):
         self.light_on = False
         self.light_button.setText(self.light_text)
-        self.comm_manager.turn_off_light()
+        self.qt_controller.turn_off_light()
 
     @Slot()
     def on_light_toggle(self):
@@ -139,12 +139,12 @@ class LightWidget(QGroupBox):
     def turn_on_laser(self):
         self.laser_on = True
         self.laser_button.setText(self.laser_text)
-        self.comm_manager.turn_on_laser()
+        self.qt_controller.turn_on_laser()
 
     def turn_off_laser(self):
         self.laser_on = False
         self.laser_button.setText(self.laser_text)
-        self.comm_manager.turn_off_laser()
+        self.qt_controller.turn_off_laser()
 
     @Slot()
     def on_laser_toggle(self):
@@ -155,10 +155,10 @@ class LightWidget(QGroupBox):
 
 
 class RotateMotorWidget(QGroupBox):
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
         super().__init__("旋转电机")
 
-        self.comm_manager = comm_manager
+        self.qt_controller = qt_controller
 
         self.setup_ui()
         self.setup_signals()
@@ -208,42 +208,42 @@ class RotateMotorWidget(QGroupBox):
     @Slot()
     def on_offset_set(self):
         offset = self.offset_spinbox.value()
-        self.comm_manager.set_rotate_offset(offset)
+        self.qt_controller.set_rotate_offset(offset)
 
     @Slot()
     def on_target_1_set(self):
-        self.comm_manager.set_rotate_target(1)
+        self.qt_controller.set_rotate_target(1)
 
     @Slot()
     def on_target_2_set(self):
-        self.comm_manager.set_rotate_target(2)
+        self.qt_controller.set_rotate_target(2)
 
     @Slot()
     def on_target_3_set(self):
-        self.comm_manager.set_rotate_target(3)
+        self.qt_controller.set_rotate_target(3)
 
     @Slot()
     def on_target_4_set(self):
-        self.comm_manager.set_rotate_target(4)
+        self.qt_controller.set_rotate_target(4)
 
     @Slot()
     def on_target_5_set(self):
-        self.comm_manager.set_rotate_target(5)
+        self.qt_controller.set_rotate_target(5)
 
     @Slot()
     def on_target_6_set(self):
-        self.comm_manager.set_rotate_target(6)
+        self.qt_controller.set_rotate_target(6)
 
     @Slot()
     def on_target_reset_set(self):
-        self.comm_manager.set_rotate_target(0)
+        self.qt_controller.set_rotate_target(0)
 
 
 class ScrewMotorWidget(QGroupBox):
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
         super().__init__("丝杆电机")
 
-        self.comm_manager = comm_manager
+        self.qt_controller = qt_controller
 
         self.setup_ui()
         self.setup_signals()
@@ -299,50 +299,50 @@ class ScrewMotorWidget(QGroupBox):
     @Slot()
     def on_offset_set(self):
         offset = self.offset_spinbox.value()
-        self.comm_manager.set_screw_offset(offset)
+        self.qt_controller.set_screw_offset(offset)
 
     @Slot()
     def on_target_1_set(self):
-        self.comm_manager.set_screw_target(1)
+        self.qt_controller.set_screw_target(1)
 
     @Slot()
     def on_target_2_set(self):
-        self.comm_manager.set_screw_target(2)
+        self.qt_controller.set_screw_target(2)
 
     @Slot()
     def on_target_3_set(self):
-        self.comm_manager.set_screw_target(3)
+        self.qt_controller.set_screw_target(3)
 
     @Slot()
     def on_target_4_set(self):
-        self.comm_manager.set_screw_target(4)
+        self.qt_controller.set_screw_target(4)
 
     @Slot()
     def on_target_5_set(self):
-        self.comm_manager.set_screw_target(5)
+        self.qt_controller.set_screw_target(5)
 
     @Slot()
     def on_target_6_set(self):
-        self.comm_manager.set_screw_target(6)
+        self.qt_controller.set_screw_target(6)
 
     @Slot()
     def on_target_7_set(self):
-        self.comm_manager.set_screw_target(7)
+        self.qt_controller.set_screw_target(7)
 
     @Slot()
     def on_target_8_set(self):
-        self.comm_manager.set_screw_target(8)
+        self.qt_controller.set_screw_target(8)
 
     @Slot()
     def on_target_reset_set(self):
-        self.comm_manager.set_screw_target(0)
+        self.qt_controller.set_screw_target(0)
 
 
 class HardwareSettingWidget(QGroupBox):
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
         super().__init__("硬件设置")
 
-        self.comm_manager = comm_manager
+        self.qt_controller = qt_controller
 
         self.setup_ui()
         self.setup_signals()
@@ -402,9 +402,9 @@ class HardwareSettingWidget(QGroupBox):
 
 
 class ControlWidget(QWidget):
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
         super().__init__()
-        self.comm_manager = comm_manager
+        self.qt_controller = qt_controller
 
         self.setup_ui()
 
@@ -414,19 +414,19 @@ class ControlWidget(QWidget):
         self.setLayout(main_layout)
 
         # Add communication widget
-        self.comm_widget = CommunicationWidget(self.comm_manager)
+        self.comm_widget = CommunicationWidget(self.qt_controller)
         main_layout.addWidget(self.comm_widget)
 
-        light_widget = LightWidget(self.comm_manager)
+        light_widget = LightWidget(self.qt_controller)
         main_layout.addWidget(light_widget)
 
-        rotate_widget = RotateMotorWidget(self.comm_manager)
+        rotate_widget = RotateMotorWidget(self.qt_controller)
         main_layout.addWidget(rotate_widget)
 
-        screw_widget = ScrewMotorWidget(self.comm_manager)
+        screw_widget = ScrewMotorWidget(self.qt_controller)
         main_layout.addWidget(screw_widget)
 
-        hardware_widget = HardwareSettingWidget(self.comm_manager)
+        hardware_widget = HardwareSettingWidget(self.qt_controller)
         main_layout.addWidget(hardware_widget)
 
         # Add collect widget
@@ -462,7 +462,7 @@ if __name__ == "__main__":
     setup_logging()
 
     app = QApplication(sys.argv)
-    comm_manager = CommManager()  # 创建 CommManager 实例
-    widget = ControlWidget(comm_manager=comm_manager)
+    qt_controller = QtController()  # 创建 QtController 实例
+    widget = ControlWidget(qt_controller=qt_controller)
     widget.show()
     app.exit(app.exec())

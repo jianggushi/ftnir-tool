@@ -9,12 +9,12 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 from matplotlib.figure import Figure
 from matplotlib import rcParams
 
-from interfaces.qt.manager import CommManager
+from interfaces.qt.controller import QtController
 
 
 class InterferenceFigureWidget(QWidget):
 
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
 
         # 设置中文字体
         rcParams["font.family"] = ["Microsoft YaHei", "SimHei"]
@@ -24,8 +24,8 @@ class InterferenceFigureWidget(QWidget):
         self.setup_ui()
         self._init_plot()
 
-        self.comm_manager = comm_manager
-        # self.comm_manager.light_stability_handler.add_callback(
+        self.qt_controller = qt_controller
+        # self.qt_controller.light_stability_handler.add_callback(
         #     self.on_receive_spectrum_data
         # )
 

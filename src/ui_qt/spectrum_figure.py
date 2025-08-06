@@ -5,13 +5,13 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib import rcParams
 
-from interfaces.qt.manager import CommManager
+from interfaces.qt.controller import QtController
 from comm.protocol.command import Command
 from core.processor.fft_processor import FFTProcessor
 
 
 class SpectrumFigureWidget(QWidget):
-    def __init__(self, comm_manager: CommManager):
+    def __init__(self, qt_controller: QtController):
 
         # 设置中文字体
         rcParams["font.family"] = ["Microsoft YaHei", "SimHei"]
@@ -21,8 +21,8 @@ class SpectrumFigureWidget(QWidget):
         self.setup_ui()
         self._init_plot()
 
-        self.comm_manager = comm_manager
-        # self.comm_manager.light_stability_handler.add_callback(
+        self.qt_controller = qt_controller
+        # self.qt_controller.light_stability_handler.add_callback(
         #     self.on_receive_spectrum_data
         # )
 
