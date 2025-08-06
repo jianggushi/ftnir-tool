@@ -3,14 +3,10 @@ import logging
 import threading
 from typing import Callable
 
-from comm.transport.transport import ITransport
-from comm.transport.serial import SerialTransport
-from comm.protocol.parser import MessageParser
 from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
 
 from core.service.base import MessageHandler
-from core.service.light_stablity import LightStabilityHandler
 
 logger = logging.getLogger(__name__)
 
