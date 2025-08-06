@@ -9,8 +9,8 @@ from comm.protocol.parser import MessageParser
 from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
 
-from service.base import MessageHandler
-from service.light_stablity import LightStabilityHandler
+from core.service.base import MessageHandler
+from core.service.light_stablity import LightStabilityHandler
 
 logger = logging.getLogger(__name__)
 

@@ -4,9 +4,11 @@ import numpy as np
 from collections import deque
 
 from comm.protocol.parser import RawMessage, Command
-from model.spectrum import SpectrumData
+from core.model.spectrum import SpectrumData
+
 from .interference import InterferenceHandler
-from .processor.fft_processor import FFTProcessor
+from core.processor.fft_processor import FFTProcessor
+
 
 logger = logging.getLogger(__name__)
 

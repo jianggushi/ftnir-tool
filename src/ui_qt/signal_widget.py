@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Slot
 
 from interfaces.qt.manager import CommManager
-from model.spectrum import SpectrumData
+from core.model.spectrum import SpectrumData
 from .interference_widget import InterferenceFigureWidget
 
 

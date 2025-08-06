@@ -6,7 +6,7 @@ from typing import Callable
 
 from .base import MessageHandler
 from comm.protocol.parser import RawMessage, Command
-from model.spectrum import SpectrumData
+from core.model.spectrum import SpectrumData
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from matplotlib import rcParams
 
 from interfaces.qt.manager import CommManager
 from comm.protocol.command import Command
-from service.processor.fft_processor import FFTProcessor
+from core.processor.fft_processor import FFTProcessor
 
 
 class SpectrumFigureWidget(QWidget):
