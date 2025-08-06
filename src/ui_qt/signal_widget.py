@@ -17,7 +17,8 @@ from PySide6.QtWidgets import (
     QHeaderView,
 )
 from PySide6.QtCore import Slot
-from handler.manager import CommManager
+
+from interfaces.qt.manager import CommManager
 from model.spectrum import SpectrumData
 from .interference_widget import InterferenceFigureWidget
 

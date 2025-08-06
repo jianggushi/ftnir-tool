@@ -9,7 +9,7 @@ from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as Navigation
 from matplotlib.figure import Figure
 from matplotlib import rcParams
 
-from handler.manager import CommManager
+from interfaces.qt.manager import CommManager
 
 
 class InterferenceFigureWidget(QWidget):

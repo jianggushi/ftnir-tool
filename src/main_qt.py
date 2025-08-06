@@ -3,7 +3,7 @@ import logging
 from PySide6.QtWidgets import QApplication
 
 from config.log import setup_logging
-from gui.main_window import MainWindow
+from ui_qt.main_window import MainWindow
 
 
 logger = logging.getLogger(__name__)

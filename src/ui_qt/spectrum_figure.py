@@ -5,9 +5,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib import rcParams
 
-from handler.manager import CommManager
+from interfaces.qt.manager import CommManager
 from comm.protocol.command import Command
-from handler.processor.fft_processor import FFTProcessor
+from service.processor.fft_processor import FFTProcessor
 
 
 class SpectrumFigureWidget(QWidget):

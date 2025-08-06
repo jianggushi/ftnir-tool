@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Slot
 
-from handler.manager import CommManager
+from interfaces.qt.manager import CommManager
 from .collect_widget import CollectWidget
 
 

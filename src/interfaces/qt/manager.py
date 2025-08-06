@@ -1,6 +1,5 @@
 import threading
 import logging
-import time
 import struct
 from typing import Callable
 
@@ -10,8 +9,8 @@ from comm.protocol.parser import MessageParser
 from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
 
-from .base import MessageHandler
-from .light_stablity import LightStabilityHandler
+from service.base import MessageHandler
+from service.light_stablity import LightStabilityHandler
 
 logger = logging.getLogger(__name__)
 

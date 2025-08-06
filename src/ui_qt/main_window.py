@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from handler.manager import CommManager
+from interfaces.qt.manager import CommManager
 from .control_widget import ControlWidget
 from .interference_widget import InterferenceFigureWidget
 from .spectrum_figure import SpectrumFigureWidget

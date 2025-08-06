@@ -15,10 +15,10 @@
             }
         },
         {
-            "name": "Python Debugger: main",
+            "name": "Python Debugger: main_qt",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}\\src\\main.py",
+            "program": "${workspaceFolder}\\src\\main_qt.py",
             "console": "integratedTerminal",
             "justMyCode": false,
             "logToFile": true

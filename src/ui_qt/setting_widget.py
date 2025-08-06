@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QRadioButton,
 )
 
-from handler.manager import CommManager
+from interfaces.qt.manager import CommManager
 
 
 class HardwareSettingWidget(QDialog):
