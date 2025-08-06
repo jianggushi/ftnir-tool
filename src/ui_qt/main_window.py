@@ -19,6 +19,7 @@ from .setting_widget import (
     CommunicationSettingWidget,
 )
 from .signal_widget import SignalWidget
+from .log_widget import LogWidget
 
 
 class MainWindow(QMainWindow):
@@ -99,6 +100,11 @@ class MainWindow(QMainWindow):
         signal_menu.addAction("信号检查", self.open_signal_widget)
         self.signal_widget = SignalWidget(self.qt_controller)
 
+        tool_menu = QMenu("工具", self)
+        menu_bar.addMenu(tool_menu)
+        tool_menu.addAction("日志", self.open_log_widget)
+        self.log_widget = LogWidget()
+
         # Create help menu
         menu_bar.addMenu(QMenu("帮助", self))
 
@@ -113,6 +119,9 @@ class MainWindow(QMainWindow):
 
     def open_signal_widget(self):
         self.signal_widget.exec()
+
+    def open_log_widget(self):
+        self.log_widget.show()
 
     def setup_status_bar(self):
         status_bar = self.statusBar()
