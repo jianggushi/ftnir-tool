@@ -20,6 +20,7 @@ from .setting_widget import (
 )
 from .signal_widget import SignalWidget
 from .log_widget import LogWidget
+from .status_bar import StatusBarWidget
 
 
 class MainWindow(QMainWindow):
@@ -124,10 +125,5 @@ class MainWindow(QMainWindow):
         self.log_widget.show()
 
     def setup_status_bar(self):
-        status_bar = self.statusBar()
-
-        status_bar.addWidget(QLabel("连接状态：未连接"))
-        status_bar.addWidget(QLabel("光源状态：未打开"))
-        status_bar.addWidget(QLabel("激光状态：未打开"))
-        status_bar.addWidget(QLabel("温度：--"))
-        status_bar.addWidget(QLabel("湿度：--"))
+        status_bar = StatusBarWidget(self.qt_controller)
+        self.setStatusBar(status_bar)

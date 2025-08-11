@@ -1,20 +1,18 @@
-import struct
 import logging
 import threading
-from typing import Callable
 
 from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
-
 from core.service.base import MessageHandler
+from .message import MessageSender
 
 logger = logging.getLogger(__name__)
 
 
 class HandshakeControler(MessageHandler):
-    def __init__(self, send_message_callback: Callable[[Command, bytes], None]):
-        self._send_message = send_message_callback
-
+    def __init__(self, message_sender: MessageSender):
+        super().__init__()
+        self.message_sender = message_sender
         self._handshake_complete = False
         self._handshake_timer = None
         self._retry_count = 0
@@ -42,7 +40,7 @@ class HandshakeControler(MessageHandler):
                 self._handshake_timer.cancel()
                 self._handshake_timer = None
         elif msg.command == Command.HANDSHAKE_REQ:
-            self._send_message(Command.HANDSHAKE_RES, b"")
+            self.message_sender.send_message(Command.HANDSHAKE_RES, b"")
 
     def _start_handshake(self):
         if self._handshake_complete:
@@ -52,7 +50,7 @@ class HandshakeControler(MessageHandler):
         if self._handshake_timer:
             self._handshake_timer.cancel()
         # 发送握手命令
-        self._send_message(Command.HANDSHAKE_REQ, b"")
+        self.message_sender.send_message(Command.HANDSHAKE_REQ, b"")
         # 启动握手超时检查定时器
         self._handshake_timer = threading.Timer(3.0, self._handle_timeout)
         self._handshake_timer.start()

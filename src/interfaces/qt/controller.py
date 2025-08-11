@@ -1,9 +1,9 @@
 import threading
 import logging
 import struct
-from typing import Callable
+from PySide6.QtCore import Signal, QObject
 
-from comm.transport.transport import ITransport
+
 from comm.transport.serial import SerialTransport
 from comm.protocol.parser import MessageParser
 from comm.protocol.parser import RawMessage
@@ -13,21 +13,28 @@ from core.service.base import MessageHandler
 from core.service.light_stablity import LightStabilityHandler
 
 from .handshake import HandshakeControler
+from .message import MessageSender
 
 
 logger = logging.getLogger(__name__)
 
 
-class QtController:
+class QtController(QObject):
+    status_bar_updated = Signal(str, object)
+
     def __init__(self):
+        QObject.__init__(self)
+
         self.transport = SerialTransport()
         self.transport.on_data_received(self._handle_raw_data)
+
+        self.message_sender = MessageSender(self.transport)
 
         self._parser = MessageParser()
         self._lock = threading.Lock()
 
         self._connected = False
-        self._handshake = HandshakeControler(self._send_message)
+        self._handshake = HandshakeControler(self.message_sender)
 
         self.light_stability_handler = LightStabilityHandler()
 
@@ -38,17 +45,19 @@ class QtController:
         }
 
     def connect(self, **kwargs):
-        print(kwargs)
         try:
             if not self.transport.is_open:
                 port = kwargs.get("port", "")
                 self.transport.set_port(port)
                 self.transport.open()
                 self._connected = True
+                self.status_bar_updated.emit("transport", "已打开")
+
             # 开始握手
             self._handshake.start()
         except Exception as e:
             logger.error(f"连接失败: {e}")
+            self.status_bar_updated.emit("transport", "错误")
             self.disconnect()
 
     def disconnect(self):
@@ -57,6 +66,7 @@ class QtController:
         logger.info("stoped handshake")
         if self.transport.is_open:
             self.transport.close()
+            self.status_bar_updated.emit("transport", "关闭")
 
     def list_ports(self) -> list[str]:
         return self.transport.list_ports()
@@ -83,9 +93,7 @@ class QtController:
             logger.warning(f"no handler found for message: {msg.command.name}")
 
     def _send_message(self, command: Command, data: bytes = b""):
-        message_bytes = self._parser.pack(command, data)
-        self.transport.send_data(message_bytes)
-        logger.info(f"send message: {command.name}")
+        self.message_sender.send_message(command, data)
 
     def register_handler(self, command: Command, handler: MessageHandler):
         """注册消息处理器"""
