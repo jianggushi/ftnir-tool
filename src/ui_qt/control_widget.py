@@ -253,7 +253,7 @@ class ScrewMotorWidget(QGroupBox):
         self.setLayout(main_layout)
 
         offset_layout = QHBoxLayout()
-        self.offset_spinbox = QDoubleSpinBox(minimum=0.00, singleStep=0.01)
+        self.offset_spinbox = QSpinBox(minimum=0, singleStep=1)
         self.offset_button = QPushButton("设置偏移")
         offset_layout.addWidget(QLabel("偏移(距离mm):"))
         offset_layout.addWidget(self.offset_spinbox)
@@ -429,15 +429,9 @@ class ControlWidget(QWidget):
         hardware_widget = HardwareSettingWidget(self.qt_controller)
         main_layout.addWidget(hardware_widget)
 
-        # Add collect widget
-        self.collect_widget = CollectWidget()
-        self.collect_widget.data_collected.connect(
-            self.on_data_collected
-        )  # 连接采集数据信号
-
-        # Add widgets to main layout
-
+        self.collect_widget = CollectWidget(self.qt_controller)
         main_layout.addWidget(self.collect_widget)
+
         main_layout.addStretch()
 
     @Slot()
@@ -447,11 +441,6 @@ class ControlWidget(QWidget):
     @Slot()
     def on_check_stop(self):
         pass
-
-    @Slot(list, list)
-    def on_data_collected(self, x_data, y_data):
-        """处理采集到的数据并更新图表"""
-        self.figure_widget.update_data(x_data, y_data)
 
 
 if __name__ == "__main__":

@@ -50,14 +50,3 @@ class MessageParser:
             yield RawMessage(command, data_bytes)
 
             self._buffer = self._buffer[message_len:]
-
-    @staticmethod
-    def pack(command: Command, data: bytes = b"") -> bytes:
-        """
-        打包消息为字节流
-        """
-        data_len = len(data)
-        crc = 0
-        header = Message.START_FLAG + struct.pack(">HI", command.value, data_len)
-        footer = struct.pack(">H", crc) + Message.END_FLAG
-        return header + data + footer

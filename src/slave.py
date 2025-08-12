@@ -12,6 +12,7 @@ from comm.transport.serial import SerialTransport
 from comm.protocol.parser import MessageParser
 from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
+from comm.protocol.message import Message
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -28,11 +29,16 @@ class SlaveManager:
         self._connected = False
 
         self.check_light_stability_running = False
+        self.collect_running = False
 
         self._message_handlers: dict[Command, Callable[[RawMessage], None]] = {
             Command.HANDSHAKE_REQ: self.receive_handshake_req,
             Command.CHECK_LIGHT_STABILITY: self.receive_check_light_stability,
             Command.CHECK_STOP: self.receive_check_stop,
+            Command.COLLECT_DARK_NOISE_REQ: self.receive_collect_dark_noise,
+            Command.COLLECT_BACKGROUND_REQ: self.receive_collect_background,
+            Command.COLLECT_SAMPLE_REQ: self.receive_collect_sample,
+            Command.COLLECT_STOP_REQ: self.receive_collect_stop,
         }
 
     def connect(self):
@@ -69,12 +75,14 @@ class SlaveManager:
         )
         handle_func = self._message_handlers.get(msg.command)
         if handle_func:
-            handle_func(msg)
+            threading.Thread(target=handle_func, args=(msg,)).start()
         else:
-            logger.warning(f"no handler found for message: {msg.command.name}")
+            logger.warning(
+                f"no handler found for message: {msg.command.name}, {msg.data}"
+            )
 
     def _send_message(self, command: Command, data: bytes = b""):
-        message_bytes = self._parser.pack(command, data)
+        message_bytes = Message.pack(command, data)
         self.transport.send_data(message_bytes)
         logger.info(f"send message: {command.name}")
 
@@ -103,6 +111,78 @@ class SlaveManager:
         if raw_message.command != Command.CHECK_LIGHT_STABILITY:
             return
         self.check_light_stability_running = False
+
+    def receive_collect_dark_noise(self, raw_message: RawMessage):
+        """处理采集暗噪声请求"""
+        if raw_message.command != Command.COLLECT_DARK_NOISE_REQ:
+            return
+        # 解析请求参数
+        num = 0
+        continuous_mode = raw_message.data[0] == 0xFF
+        if not continuous_mode:
+            num = struct.unpack(">H", raw_message.data[1:])[0]
+
+        self.collect_running = True
+
+        while self.collect_running and (num > 0 or continuous_mode):
+            t, sig, freq = generate_test_signal()
+            test_data = sig.tolist()
+            data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
+            self._send_message(Command.COLLECT_DARK_NOISE_RES, data_bytes)
+
+            if not continuous_mode:
+                num -= 1
+            time.sleep(0.1)
+
+    def receive_collect_background(self, raw_message: RawMessage):
+        """处理采集背景请求"""
+        if raw_message.command != Command.COLLECT_BACKGROUND_REQ:
+            return
+        # 解析请求参数
+        num = 0
+        continuous_mode = raw_message.data[0] == 0xFF
+        if not continuous_mode:
+            num = struct.unpack(">H", raw_message.data[1:])[0]
+
+        self.collect_running = True
+
+        while self.collect_running and (num > 0 or continuous_mode):
+            t, sig, freq = generate_test_signal()
+            test_data = sig.tolist()
+            data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
+            self._send_message(Command.COLLECT_BACKGROUND_RES, data_bytes)
+
+            if not continuous_mode:
+                num -= 1
+            time.sleep(0.1)
+
+    def receive_collect_sample(self, raw_message: RawMessage):
+        """处理采集样本请求"""
+        if raw_message.command != Command.COLLECT_SAMPLE_REQ:
+            return
+        # 解析请求参数
+        num = 0
+        continuous_mode = raw_message.data[0] == 0xFF
+        if not continuous_mode:
+            num = struct.unpack(">H", raw_message.data[1:])[0]
+
+        self.collect_running = True
+
+        while self.collect_running and (num > 0 or continuous_mode):
+            t, sig, freq = generate_test_signal()
+            test_data = sig.tolist()
+            data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
+            self._send_message(Command.COLLECT_SAMPLE_RES, data_bytes)
+
+            if not continuous_mode:
+                num -= 1
+            time.sleep(0.1)
+
+    def receive_collect_stop(self, raw_message: RawMessage):
+        """处理采集停止请求"""
+        if raw_message.command != Command.COLLECT_STOP_REQ:
+            return
+        self.collect_running = False
 
 
 def run():

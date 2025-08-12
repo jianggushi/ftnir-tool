@@ -21,6 +21,18 @@ class Command(enum.IntEnum):
     START_COLLECT = 0x10
     STOP_COLLECT = 0x11
 
+    # 采集暗噪声
+    COLLECT_DARK_NOISE_REQ = 0x0120
+    COLLECT_DARK_NOISE_RES = 0x0220
+    # 采集背景
+    COLLECT_BACKGROUND_REQ = 0x0121
+    COLLECT_BACKGROUND_RES = 0x0221
+    # 采集样本
+    COLLECT_SAMPLE_REQ = 0x0122
+    COLLECT_SAMPLE_RES = 0x0222
+    # 采集停止
+    COLLECT_STOP_REQ = 0x012F
+
     # 打开光源
     TURN_ON_LIGHT = 0x0301
     # 关闭光源

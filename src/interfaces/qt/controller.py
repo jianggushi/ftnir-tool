@@ -11,6 +11,9 @@ from comm.protocol.parser import Command
 
 from core.service.base import MessageHandler
 from core.service.light_stablity import LightStabilityHandler
+from core.service.interference import DarkNoiseHandler
+from core.service.interference import BackgroundHandler
+from core.service.interference import SampleHandler
 
 from .handshake import HandshakeControler
 from .message import MessageSender
@@ -37,11 +40,17 @@ class QtController(QObject):
         self._handshake = HandshakeControler(self.message_sender)
 
         self.light_stability_handler = LightStabilityHandler()
+        self.dark_noise_handler = DarkNoiseHandler()
+        self.background_handler = BackgroundHandler()
+        self.sample_handler = SampleHandler()
 
         self._message_handlers: dict[Command, MessageHandler] = {
             Command.HANDSHAKE_REQ: self._handshake,
             Command.HANDSHAKE_RES: self._handshake,
             Command.CHECK_LIGHT_STABILITY_RES: self.light_stability_handler,
+            Command.COLLECT_DARK_NOISE_RES: self.dark_noise_handler,
+            Command.COLLECT_BACKGROUND_RES: self.background_handler,
+            Command.COLLECT_SAMPLE_RES: self.sample_handler,
         }
 
     def connect(self, **kwargs):
@@ -135,17 +144,45 @@ class QtController(QObject):
         self._send_message(Command.TURN_OFF_LASER)
 
     def set_rotate_offset(self, offset: int):
-        self._send_message(Command.SET_ROTATE_OFFSET, struct.pack(">B", offset))
+        self._send_message(Command.SET_ROTATE_OFFSET, struct.pack(">H", offset))
 
     def set_rotate_target(self, target: int):
         self._send_message(Command.SET_ROTATE_TARGET, struct.pack(">B", target))
 
-    def set_screw_offset(self, offset: float):
+    def set_screw_offset(self, offset: int):
 
-        self._send_message(Command.SET_SCREW_OFFSET, struct.pack(">f", offset))
+        self._send_message(Command.SET_SCREW_OFFSET, struct.pack(">H", offset))
 
     def set_screw_target(self, target: int):
         self._send_message(Command.SET_SCREW_TARGET, struct.pack(">B", target))
 
     def set_hardware_setting(self, setting: int):
         self._send_message(Command.SET_HARDWARE_SETTING, struct.pack(">B", setting))
+
+    def collect_dark_noise(self, num: int, continuous_mode: bool):
+        """采集暗噪声"""
+        if continuous_mode:
+            self._send_message(Command.COLLECT_DARK_NOISE_REQ, struct.pack(">B", 0xFF))
+        else:
+            data = struct.pack(">B", 0x01) + struct.pack(">H", num)
+            self._send_message(Command.COLLECT_DARK_NOISE_REQ, data)
+
+    def collect_background(self, num: int, continuous_mode: bool):
+        """采集背景"""
+        if continuous_mode:
+            self._send_message(Command.COLLECT_BACKGROUND_REQ, struct.pack(">B", 0xFF))
+        else:
+            data = struct.pack(">B", 0x01) + struct.pack(">H", num)
+            self._send_message(Command.COLLECT_BACKGROUND_REQ, data)
+
+    def collect_sample(self, num: int, continuous_mode: bool):
+        """采集样本"""
+        if continuous_mode:
+            self._send_message(Command.COLLECT_SAMPLE_REQ, struct.pack(">B", 0xFF))
+        else:
+            data = struct.pack(">B", 0x01) + struct.pack(">H", num)
+            self._send_message(Command.COLLECT_SAMPLE_REQ, data)
+
+    def collect_stop(self):
+        """停止采集"""
+        self._send_message(Command.COLLECT_STOP_REQ)
