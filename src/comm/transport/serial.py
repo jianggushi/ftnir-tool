@@ -29,19 +29,11 @@ class SerialTransport(ITransport):
         self._process_thread: Thread = None
         self._process_queue = Queue(maxsize=100)
 
-    def set_port(self, port: str):
-        if self.is_open:
-            logger.warning(
-                f"serial port {self.port} is already opened, cannot change port"
-            )
-            return
-        self.port = port
-        logger.info(f"set serial port to {self.port}")
-
-    def open(self):
+    def open(self, **kwargs):
         if self.is_open:
             logger.warning(f"serial port {self.port} already opened")
             return
+        self.port = kwargs.get("port", self.port)
         try:
             self._serial = serial.Serial(
                 port=self.port,

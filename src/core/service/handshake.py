@@ -1,23 +1,23 @@
 import logging
 import threading
 
+from comm.manager import CommManager
 from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
-from core.service.base import MessageHandler
-from .message import MessageSender
+from core.service.base import BaseHandler
 
 logger = logging.getLogger(__name__)
 
 
-class HandshakeControler(MessageHandler):
-    def __init__(self, message_sender: MessageSender):
+class HandshakeService(BaseHandler):
+    def __init__(self, comm_manager: CommManager):
         super().__init__()
-        self.message_sender = message_sender
+        self.comm_manager = comm_manager
         self._handshake_complete = False
         self._handshake_timer = None
         self._retry_count = 0
 
-    def start(self):
+    def start_handshake(self):
         """开始握手过程"""
         if self._handshake_complete:
             return
@@ -25,7 +25,7 @@ class HandshakeControler(MessageHandler):
         self._retry_count = 0
         self._start_handshake()
 
-    def stop(self):
+    def stop_handshake(self):
         """停止握手过程"""
         self._handshake_complete = False
         if self._handshake_timer:
@@ -40,7 +40,7 @@ class HandshakeControler(MessageHandler):
                 self._handshake_timer.cancel()
                 self._handshake_timer = None
         elif msg.command == Command.HANDSHAKE_REQ:
-            self.message_sender.send_message(Command.HANDSHAKE_RES, b"")
+            self.comm_manager.send_message(Command.HANDSHAKE_RES, b"")
 
     def _start_handshake(self):
         if self._handshake_complete:
@@ -50,7 +50,7 @@ class HandshakeControler(MessageHandler):
         if self._handshake_timer:
             self._handshake_timer.cancel()
         # 发送握手命令
-        self.message_sender.send_message(Command.HANDSHAKE_REQ, b"")
+        self.comm_manager.send_message(Command.HANDSHAKE_REQ, b"")
         # 启动握手超时检查定时器
         self._handshake_timer = threading.Timer(3.0, self._handle_timeout)
         self._handshake_timer.start()

@@ -20,14 +20,10 @@ from .collect_widget import CollectWidget
 
 
 class CommunicationWidget(QGroupBox):
-
-    def __init__(self, qt_controller: QtController):
+    def __init__(self):
         super().__init__("通信设置")
 
-        self.qt_controller = qt_controller
-
         self.setup_ui()
-        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
@@ -46,48 +42,37 @@ class CommunicationWidget(QGroupBox):
         # button layout
         self.connect_btn = QPushButton("连接")
         self.disconnect_btn = QPushButton("断开")
+        self.disconnect_btn.setEnabled(False)
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.connect_btn)
         button_layout.addWidget(self.disconnect_btn)
 
         main_layout.addLayout(button_layout)
 
-    def setup_signals(self):
-        self.connect_btn.clicked.connect(self.on_connect)
-        self.disconnect_btn.clicked.connect(self.on_disconnect)
-        self.disconnect_btn.setEnabled(False)
-        self.refresh_button.clicked.connect(self.refresh_ports)
+    def get_port(self) -> str:
+        return self.port_combo.currentText()
 
-    @Slot()
-    def on_connect(self):
+    def set_connect(self):
         self.connect_btn.setEnabled(False)
         self.disconnect_btn.setEnabled(True)
-        port = self.port_combo.currentText()
-        self.qt_controller.connect(port=port)
 
-    @Slot()
-    def on_disconnect(self):
+    def set_disconnect(self):
         self.connect_btn.setEnabled(True)
         self.disconnect_btn.setEnabled(False)
-        self.qt_controller.disconnect()
 
-    @Slot()
-    def refresh_ports(self):
+    def refresh_ports(self, ports: list[str]):
         self.port_combo.clear()
-        ports = self.qt_controller.list_ports()
         self.port_combo.addItems(ports)
 
 
 class LightWidget(QGroupBox):
-    def __init__(self, qt_controller: QtController):
+    def __init__(self):
         super().__init__("光源/激光控制")
 
-        self.qt_controller = qt_controller
         self.light_on = False
         self.laser_on = False
 
         self.setup_ui()
-        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
@@ -100,10 +85,6 @@ class LightWidget(QGroupBox):
         light_layout.addWidget(self.laser_button)
 
         main_layout.addLayout(light_layout)
-
-    def setup_signals(self):
-        self.light_button.clicked.connect(self.on_light_toggle)
-        self.laser_button.clicked.connect(self.on_laser_toggle)
 
     @property
     def light_text(self) -> str:
@@ -122,40 +103,22 @@ class LightWidget(QGroupBox):
     def turn_on_light(self):
         self.light_on = True
         self.light_button.setText(self.light_text)
-        self.qt_controller.turn_on_light()
 
     def turn_off_light(self):
         self.light_on = False
         self.light_button.setText(self.light_text)
-        self.qt_controller.turn_off_light()
-
-    @Slot()
-    def on_light_toggle(self):
-        if self.light_on:
-            self.turn_off_light()
-        else:
-            self.turn_on_light()
 
     def turn_on_laser(self):
         self.laser_on = True
         self.laser_button.setText(self.laser_text)
-        self.qt_controller.turn_on_laser()
 
     def turn_off_laser(self):
         self.laser_on = False
         self.laser_button.setText(self.laser_text)
-        self.qt_controller.turn_off_laser()
-
-    @Slot()
-    def on_laser_toggle(self):
-        if self.laser_on:
-            self.turn_off_laser()
-        else:
-            self.turn_on_laser()
 
 
 class RotateMotorWidget(QGroupBox):
-    def __init__(self, qt_controller: QtController):
+    def __init__(self, qt_controller: QtController = None):
         super().__init__("旋转电机")
 
         self.qt_controller = qt_controller
@@ -240,7 +203,7 @@ class RotateMotorWidget(QGroupBox):
 
 
 class ScrewMotorWidget(QGroupBox):
-    def __init__(self, qt_controller: QtController):
+    def __init__(self, qt_controller: QtController = None):
         super().__init__("丝杆电机")
 
         self.qt_controller = qt_controller
@@ -339,7 +302,7 @@ class ScrewMotorWidget(QGroupBox):
 
 
 class HardwareSettingWidget(QGroupBox):
-    def __init__(self, qt_controller: QtController):
+    def __init__(self, qt_controller: QtController = None):
         super().__init__("硬件设置")
 
         self.qt_controller = qt_controller
@@ -402,9 +365,8 @@ class HardwareSettingWidget(QGroupBox):
 
 
 class ControlWidget(QWidget):
-    def __init__(self, qt_controller: QtController):
+    def __init__(self):
         super().__init__()
-        self.qt_controller = qt_controller
 
         self.setup_ui()
 
@@ -413,34 +375,25 @@ class ControlWidget(QWidget):
         main_layout = QVBoxLayout()
         self.setLayout(main_layout)
 
-        # Add communication widget
-        self.comm_widget = CommunicationWidget(self.qt_controller)
+        self.comm_widget = CommunicationWidget()
         main_layout.addWidget(self.comm_widget)
 
-        light_widget = LightWidget(self.qt_controller)
-        main_layout.addWidget(light_widget)
+        self.light_widget = LightWidget()
+        main_layout.addWidget(self.light_widget)
 
-        rotate_widget = RotateMotorWidget(self.qt_controller)
+        rotate_widget = RotateMotorWidget()
         main_layout.addWidget(rotate_widget)
 
-        screw_widget = ScrewMotorWidget(self.qt_controller)
+        screw_widget = ScrewMotorWidget()
         main_layout.addWidget(screw_widget)
 
-        hardware_widget = HardwareSettingWidget(self.qt_controller)
+        hardware_widget = HardwareSettingWidget()
         main_layout.addWidget(hardware_widget)
 
-        self.collect_widget = CollectWidget(self.qt_controller)
+        self.collect_widget = CollectWidget()
         main_layout.addWidget(self.collect_widget)
 
         main_layout.addStretch()
-
-    @Slot()
-    def on_check_start(self):
-        pass
-
-    @Slot()
-    def on_check_stop(self):
-        pass
 
 
 if __name__ == "__main__":

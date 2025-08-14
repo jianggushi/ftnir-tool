@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QApplication
 
 from config.log import setup_logging
 from ui_qt.main_window import MainWindow
-from interfaces.qt.main import MainController
 
 
 logger = logging.getLogger(__name__)
@@ -16,8 +15,6 @@ def main():
     app.setApplicationVersion("1.0.0")
 
     main_window = MainWindow()
-    main_controller = MainController(main_window)
-
     main_window.show()
 
     app.exit(app.exec())

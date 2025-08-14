@@ -39,7 +39,8 @@ class SignalWidget(QDialog):
         main_layout.addWidget(self.tab_widget)
 
         # Create three tabs
-        self.tab_widget.addTab(LightStabilityWidget(self.qt_controller), "光源稳定性")
+        self.light_stability_widget = LightStabilityWidget()
+        self.tab_widget.addTab(self.light_stability_widget, "光源稳定性")
         self.create_wavelength_accuracy_tab()
         self.create_wavelength_repeatability_tab()
 

@@ -47,7 +47,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(splitter)
 
         # Add control widget (left panel)
-        self.control_widget = ControlWidget(self.qt_controller)
+        self.control_widget = ControlWidget()
         self.control_widget.setMinimumWidth(200)  # Set minimum width
         splitter.addWidget(self.control_widget)
 
@@ -125,5 +125,5 @@ class MainWindow(QMainWindow):
         self.log_widget.show()
 
     def setup_status_bar(self):
-        status_bar = StatusBarWidget(self.qt_controller)
-        self.setStatusBar(status_bar)
+        self.status_bar = StatusBarWidget()
+        self.setStatusBar(self.status_bar)

@@ -18,13 +18,13 @@ from interfaces.qt.controller import QtController
 
 class CollectWidget(QGroupBox):
 
-    def __init__(self, qt_controller: QtController):
+    def __init__(self, qt_controller: QtController = None):
         super().__init__("数据采集")
 
         self.controller = qt_controller
-        self.controller.dark_noise_handler.add_callback(self.on_dark_noise_received)
-        self.controller.background_handler.add_callback(self.on_dark_noise_received)
-        self.controller.sample_handler.add_callback(self.on_dark_noise_received)
+        # self.controller.dark_noise_handler.add_callback(self.on_dark_noise_received)
+        # self.controller.background_handler.add_callback(self.on_dark_noise_received)
+        # self.controller.sample_handler.add_callback(self.on_dark_noise_received)
 
         self.target_num = 0
 

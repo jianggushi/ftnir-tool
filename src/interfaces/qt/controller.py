@@ -8,14 +8,14 @@ from comm.transport.serial import SerialTransport
 from comm.protocol.parser import MessageParser
 from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
+from comm.manager import CommManager
 
-from core.service.base import MessageHandler
-from core.service.light_stablity import LightStabilityHandler
+from core.service.base import BaseHandler
+from core.service.light_stablity import LightStabilityService
 from core.service.interference import DarkNoiseHandler
 from core.service.interference import BackgroundHandler
 from core.service.interference import SampleHandler
 
-from .handshake import HandshakeControler
 from .message import MessageSender
 
 
@@ -37,17 +37,17 @@ class QtController(QObject):
         self._lock = threading.Lock()
 
         self._connected = False
-        self._handshake = HandshakeControler(self.message_sender)
 
-        self.light_stability_handler = LightStabilityHandler()
+        self.comm_manager = CommManager(self.transport)
+
+        self.light_stability_svc = LightStabilityService(self.comm_manager)
+
         self.dark_noise_handler = DarkNoiseHandler()
         self.background_handler = BackgroundHandler()
         self.sample_handler = SampleHandler()
 
-        self._message_handlers: dict[Command, MessageHandler] = {
-            Command.HANDSHAKE_REQ: self._handshake,
-            Command.HANDSHAKE_RES: self._handshake,
-            Command.CHECK_LIGHT_STABILITY_RES: self.light_stability_handler,
+        self._message_handlers: dict[Command, BaseHandler] = {
+            Command.CHECK_LIGHT_STABILITY_RES: self.light_stability_svc,
             Command.COLLECT_DARK_NOISE_RES: self.dark_noise_handler,
             Command.COLLECT_BACKGROUND_RES: self.background_handler,
             Command.COLLECT_SAMPLE_RES: self.sample_handler,
@@ -104,7 +104,7 @@ class QtController(QObject):
     def _send_message(self, command: Command, data: bytes = b""):
         self.message_sender.send_message(command, data)
 
-    def register_handler(self, command: Command, handler: MessageHandler):
+    def register_handler(self, command: Command, handler: BaseHandler):
         """注册消息处理器"""
         self._message_handlers[command] = handler
 
@@ -130,18 +130,6 @@ class QtController(QObject):
 
     def check_stop(self):
         self._send_message(Command.CHECK_STOP, b"\03")
-
-    def turn_on_light(self):
-        self._send_message(Command.TURN_ON_LIGHT)
-
-    def turn_off_light(self):
-        self._send_message(Command.TURN_OFF_LIGHT)
-
-    def turn_on_laser(self):
-        self._send_message(Command.TURN_ON_LASER)
-
-    def turn_off_laser(self):
-        self._send_message(Command.TURN_OFF_LASER)
 
     def set_rotate_offset(self, offset: int):
         self._send_message(Command.SET_ROTATE_OFFSET, struct.pack(">H", offset))

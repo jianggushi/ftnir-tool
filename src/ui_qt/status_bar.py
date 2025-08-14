@@ -6,18 +6,14 @@ from PySide6.QtWidgets import (
 
 from PySide6.QtCore import Slot
 
-from interfaces.qt.controller import QtController
-
 logger = logging.getLogger(__name__)
 
 
 class StatusBarWidget(QStatusBar):
-    def __init__(self, qt_controller: QtController):
+    def __init__(self):
         super().__init__()
 
         self.labels = {}
-        self.qt_controller = qt_controller
-        self.qt_controller.status_bar_updated.connect(self.update_label)
 
         self.setup_ui()
 
@@ -41,6 +37,15 @@ class StatusBarWidget(QStatusBar):
         self.humidity_label = QLabel("湿度：--  ")
         self.addWidget(self.humidity_label)
         self.labels["humidity"] = self.humidity_label
+
+    def update_transport_label(self, label: str):
+        self.transport_label.setText(f"连接：{label}  ")
+
+    def update_light_label(self, label: str):
+        self.light_label.setText(f"光源：{label}  ")
+
+    def update_laser_label(self, label: str):
+        self.laser_label.setText(f"激光：{label}  ")
 
     @Slot(str, object)
     def update_label(self, key: str, value: object):

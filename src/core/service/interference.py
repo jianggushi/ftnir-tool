@@ -1,10 +1,8 @@
 import logging
 import struct
 import numpy as np
-from typing import Callable
 
-
-from .base import MessageHandler
+from .base import BaseHandler
 from comm.protocol.parser import RawMessage, Command
 from core.model.spectrum import SpectrumData
 from core.processor.fft_processor import FFTProcessor
@@ -12,38 +10,21 @@ from core.processor.fft_processor import FFTProcessor
 logger = logging.getLogger(__name__)
 
 
-class InterferenceHandler(MessageHandler):
+class InterferenceHandler(BaseHandler):
     def __init__(self):
-        self._callbacks: list[Callable[[map], None]] = []
-
-    def add_callback(self, callback: Callable[[map], None]):
-        if callback not in self._callbacks:
-            self._callbacks.append(callback)
-
-    def remove_callback(self, callback: Callable[[map], None]):
-        if callback in self._callbacks:
-            self._callbacks.remove(callback)
-
-    def clear_callbacks(self):
-        self._callbacks.clear()
-
-    def _run_callbacks(self, data: object):
-        for callback in self._callbacks:
-            try:
-                callback(data)
-            except Exception as e:
-                logger.error(f"failed to run callback {callback.__name__}: {e}")
+        super().__init__()
 
     def handle(self, msg: RawMessage):
         if msg.command in [Command.CHECK_RESP]:
             try:
-                points = self._parse_spectrum_data(msg.data)
+                points = self._parse_interference_data(msg.data)
                 data = np.array(points, dtype=np.float32)
                 self._run_callbacks(data)
             except Exception as e:
                 logger.error(f"failed to handle message {msg.command}: {e}")
 
-    def _parse_spectrum_data(self, data: bytes) -> list[float]:
+    def _parse_interference_data(self, data: bytes) -> list[float]:
+        """解析干涉数据,每个数据点是4字节浮点数"""
         if len(data) % 4 != 0:
             raise ValueError(
                 f"data length must be a multiple of 4, got {len(data)} bytes"
@@ -53,7 +34,7 @@ class InterferenceHandler(MessageHandler):
         return list(struct.unpack(f">{count}f", data))
 
 
-class DarkNoiseHandler(InterferenceHandler):
+class DarkNoiseHandler(BaseHandler):
     def __init__(self):
         super().__init__()
         self._fft_processor = FFTProcessor()
@@ -78,7 +59,7 @@ class DarkNoiseHandler(InterferenceHandler):
             logger.error(f"failed to handle message {msg.command}: {e}")
 
 
-class BackgroundHandler(InterferenceHandler):
+class BackgroundHandler(BaseHandler):
     def __init__(self):
         super().__init__()
         self._fft_processor = FFTProcessor()
@@ -103,7 +84,7 @@ class BackgroundHandler(InterferenceHandler):
             logger.error(f"failed to handle message {msg.command}: {e}")
 
 
-class SampleHandler(InterferenceHandler):
+class SampleHandler(BaseHandler):
     def __init__(self):
         super().__init__()
         self._fft_processor = FFTProcessor()

@@ -10,7 +10,7 @@ class ITransport(ABC):
         self._data_received_callback: Callable[[bytes], None] = None
 
     @abstractmethod
-    def open(self):
+    def open(self, **kwargs):
         raise NotImplementedError
 
     @abstractmethod
