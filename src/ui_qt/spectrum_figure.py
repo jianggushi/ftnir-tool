@@ -5,9 +5,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib import rcParams
 
+from core.model.spectrum import SpectrumData
 from interfaces.qt.controller import QtController
-from comm.protocol.command import Command
-from core.processor.fft_processor import FFTProcessor
 
 
 class SpectrumFigureWidget(QWidget):
@@ -22,9 +21,13 @@ class SpectrumFigureWidget(QWidget):
         self._init_plot()
 
         self.qt_controller = qt_controller
-        # self.qt_controller.light_stability_handler.add_callback(
-        #     self.on_receive_spectrum_data
-        # )
+        self.qt_controller.dark_noise_handler.add_callback(
+            self.on_receive_spectrum_data
+        )
+        self.qt_controller.background_handler.add_callback(
+            self.on_receive_spectrum_data
+        )
+        self.qt_controller.sample_handler.add_callback(self.on_receive_spectrum_data)
 
         # 数据缓存
         self._x_data = []
@@ -97,9 +100,9 @@ class SpectrumFigureWidget(QWidget):
         self.line.set_data([], [])
         self.canvas.draw()
 
-    def on_receive_spectrum_data(self, data: map):
+    def on_receive_spectrum_data(self, data: SpectrumData):
         """处理接收到的光谱数据"""
-        spectrum_data = data.get("spectrum_data", np.array([]))
+        spectrum_data = data.spectrum
         x_data = list(range(spectrum_data.shape[0]))
         self.update_data(x_data, spectrum_data.tolist())
 

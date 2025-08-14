@@ -108,7 +108,7 @@ class SlaveManager:
 
     def receive_check_stop(self, raw_message: RawMessage):
         """处理停止检测请求"""
-        if raw_message.command != Command.CHECK_LIGHT_STABILITY:
+        if raw_message.command != Command.CHECK_STOP:
             return
         self.check_light_stability_running = False
 

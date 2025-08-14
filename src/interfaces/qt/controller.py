@@ -186,3 +186,8 @@ class QtController(QObject):
     def collect_stop(self):
         """停止采集"""
         self._send_message(Command.COLLECT_STOP_REQ)
+
+    # def save_light_stability_data(self, data: LightStability):
+    #     with db.session() as session:
+    #         session.add(data)
+    #         session.commit()

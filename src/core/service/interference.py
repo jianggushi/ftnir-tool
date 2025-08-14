@@ -27,7 +27,7 @@ class InterferenceHandler(MessageHandler):
     def clear_callbacks(self):
         self._callbacks.clear()
 
-    def _run_callbacks(self, data: SpectrumData):
+    def _run_callbacks(self, data: object):
         for callback in self._callbacks:
             try:
                 callback(data)

@@ -11,7 +11,7 @@ from PySide6.QtCore import Qt
 
 from interfaces.qt.controller import QtController
 from .control_widget import ControlWidget
-from .interference_widget import InterferenceFigureWidget
+from .interference_figure import InterferenceFigureWidget
 from .spectrum_figure import SpectrumFigureWidget
 from .setting_widget import (
     HardwareSettingWidget,
