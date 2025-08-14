@@ -12,29 +12,17 @@ from matplotlib import rcParams
 from core.model.spectrum import SpectrumData
 from interfaces.qt.controller import QtController
 
+from util.util import init_font
+
 
 class InterferenceFigureWidget(QWidget):
 
-    def __init__(self, qt_controller: QtController):
-
-        # 设置中文字体
-        rcParams["font.family"] = ["Microsoft YaHei", "SimHei"]
-        rcParams["axes.unicode_minus"] = False  # 解决负号显示问题
-
+    def __init__(self):
         super().__init__()
+        init_font()
+
         self.setup_ui()
         self._init_plot()
-
-        self.qt_controller = qt_controller
-        self.qt_controller.dark_noise_handler.add_callback(
-            self.on_receive_interference_data
-        )
-        self.qt_controller.background_handler.add_callback(
-            self.on_receive_interference_data
-        )
-        self.qt_controller.sample_handler.add_callback(
-            self.on_receive_interference_data
-        )
 
         # 数据缓存
         self._x_data = []
@@ -111,8 +99,7 @@ class InterferenceFigureWidget(QWidget):
         self.line.set_data([], [])
         self.canvas.draw()
 
-    def on_receive_interference_data(self, data: SpectrumData):
-        # TODO: 数据类型转换可能有问题
+    def on_receive_data(self, data: SpectrumData):
         interference_data = data.interference
         x_data = list(range(interference_data.shape[0]))
         self.update_data(x_data, interference_data.tolist())

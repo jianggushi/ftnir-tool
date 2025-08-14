@@ -8,7 +8,7 @@ from comm.protocol.parser import RawMessage
 logger = logging.getLogger(__name__)
 
 
-class BaseHandler(ABC):
+class BaseService(ABC):
     def __init__(self):
         self._callbacks: list[Callable[[object], None]] = []
 

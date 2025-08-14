@@ -21,13 +21,13 @@ class SpectrumFigureWidget(QWidget):
         self._init_plot()
 
         self.qt_controller = qt_controller
-        self.qt_controller.dark_noise_handler.add_callback(
-            self.on_receive_spectrum_data
-        )
-        self.qt_controller.background_handler.add_callback(
-            self.on_receive_spectrum_data
-        )
-        self.qt_controller.sample_handler.add_callback(self.on_receive_spectrum_data)
+        # self.qt_controller.dark_noise_handler.add_callback(
+        #     self.on_receive_spectrum_data
+        # )
+        # self.qt_controller.background_handler.add_callback(
+        #     self.on_receive_spectrum_data
+        # )
+        # self.qt_controller.sample_handler.add_callback(self.on_receive_spectrum_data)
 
         # 数据缓存
         self._x_data = []

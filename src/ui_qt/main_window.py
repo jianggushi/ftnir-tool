@@ -57,7 +57,7 @@ class MainWindow(QMainWindow):
         right_layout.setContentsMargins(0, 0, 0, 0)
 
         # Add interference widget (top of right panel)
-        self.interference_widget = InterferenceFigureWidget(self.qt_controller)
+        self.interference_widget = InterferenceFigureWidget()
         right_layout.addWidget(self.interference_widget)
 
         # Add spectrum widget (bottom of right panel)

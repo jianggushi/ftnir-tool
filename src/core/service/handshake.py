@@ -4,12 +4,12 @@ import threading
 from comm.manager import CommManager
 from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
-from core.service.base import BaseHandler
+from core.service.base import BaseService
 
 logger = logging.getLogger(__name__)
 
 
-class HandshakeService(BaseHandler):
+class HandshakeService(BaseService):
     def __init__(self, comm_manager: CommManager):
         super().__init__()
         self.comm_manager = comm_manager

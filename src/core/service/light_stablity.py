@@ -8,13 +8,13 @@ from comm.manager import CommManager
 from core.model.spectrum import LightStabilityData
 from core.processor.fft_processor import FFTProcessor
 
-from .base import BaseHandler, parse_interference_data
+from .base import BaseService, parse_interference_data
 
 
 logger = logging.getLogger(__name__)
 
 
-class LightStabilityService(BaseHandler):
+class LightStabilityService(BaseService):
     def __init__(self, comm_manager: CommManager):
         super().__init__()
 

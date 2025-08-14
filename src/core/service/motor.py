@@ -4,12 +4,12 @@ import struct
 from comm.protocol.parser import RawMessage, Command
 from comm.manager import CommManager
 
-from .base import BaseHandler
+from .base import BaseService
 
 logger = logging.getLogger(__name__)
 
 
-class RotateMotorService(BaseHandler):
+class RotateMotorService(BaseService):
     def __init__(self, comm_manager: CommManager):
         super().__init__()
 
@@ -29,7 +29,7 @@ class RotateMotorService(BaseHandler):
         )
 
 
-class ScrewMotorService(BaseHandler):
+class ScrewMotorService(BaseService):
     def __init__(self, comm_manager: CommManager):
         super().__init__()
 

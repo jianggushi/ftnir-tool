@@ -10,11 +10,7 @@ from comm.protocol.parser import RawMessage
 from comm.protocol.parser import Command
 from comm.manager import CommManager
 
-from core.service.base import BaseHandler
-from core.service.light_stablity import LightStabilityService
-from core.service.interference import DarkNoiseHandler
-from core.service.interference import BackgroundHandler
-from core.service.interference import SampleHandler
+from core.service.base import BaseService
 
 from .message import MessageSender
 
@@ -40,18 +36,7 @@ class QtController(QObject):
 
         self.comm_manager = CommManager(self.transport)
 
-        self.light_stability_svc = LightStabilityService(self.comm_manager)
-
-        self.dark_noise_handler = DarkNoiseHandler()
-        self.background_handler = BackgroundHandler()
-        self.sample_handler = SampleHandler()
-
-        self._message_handlers: dict[Command, BaseHandler] = {
-            Command.CHECK_LIGHT_STABILITY_RES: self.light_stability_svc,
-            Command.COLLECT_DARK_NOISE_RES: self.dark_noise_handler,
-            Command.COLLECT_BACKGROUND_RES: self.background_handler,
-            Command.COLLECT_SAMPLE_RES: self.sample_handler,
-        }
+        self._message_handlers: dict[Command, BaseService] = {}
 
     def connect(self, **kwargs):
         try:
@@ -104,7 +89,7 @@ class QtController(QObject):
     def _send_message(self, command: Command, data: bytes = b""):
         self.message_sender.send_message(command, data)
 
-    def register_handler(self, command: Command, handler: BaseHandler):
+    def register_handler(self, command: Command, handler: BaseService):
         """注册消息处理器"""
         self._message_handlers[command] = handler
 
@@ -130,34 +115,6 @@ class QtController(QObject):
 
     def check_stop(self):
         self._send_message(Command.CHECK_STOP, b"\03")
-
-    def collect_dark_noise(self, num: int, continuous_mode: bool):
-        """采集暗噪声"""
-        if continuous_mode:
-            self._send_message(Command.COLLECT_DARK_NOISE_REQ, struct.pack(">B", 0xFF))
-        else:
-            data = struct.pack(">B", 0x01) + struct.pack(">H", num)
-            self._send_message(Command.COLLECT_DARK_NOISE_REQ, data)
-
-    def collect_background(self, num: int, continuous_mode: bool):
-        """采集背景"""
-        if continuous_mode:
-            self._send_message(Command.COLLECT_BACKGROUND_REQ, struct.pack(">B", 0xFF))
-        else:
-            data = struct.pack(">B", 0x01) + struct.pack(">H", num)
-            self._send_message(Command.COLLECT_BACKGROUND_REQ, data)
-
-    def collect_sample(self, num: int, continuous_mode: bool):
-        """采集样本"""
-        if continuous_mode:
-            self._send_message(Command.COLLECT_SAMPLE_REQ, struct.pack(">B", 0xFF))
-        else:
-            data = struct.pack(">B", 0x01) + struct.pack(">H", num)
-            self._send_message(Command.COLLECT_SAMPLE_REQ, data)
-
-    def collect_stop(self):
-        """停止采集"""
-        self._send_message(Command.COLLECT_STOP_REQ)
 
     # def save_light_stability_data(self, data: LightStability):
     #     with db.session() as session:

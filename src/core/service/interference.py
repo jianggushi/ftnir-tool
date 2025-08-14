@@ -2,7 +2,7 @@ import logging
 import struct
 import numpy as np
 
-from .base import BaseHandler
+from .base import BaseService
 from comm.protocol.parser import RawMessage, Command
 from core.model.spectrum import SpectrumData
 from core.processor.fft_processor import FFTProcessor
@@ -10,7 +10,7 @@ from core.processor.fft_processor import FFTProcessor
 logger = logging.getLogger(__name__)
 
 
-class InterferenceHandler(BaseHandler):
+class InterferenceHandler(BaseService):
     def __init__(self):
         super().__init__()
 
@@ -32,81 +32,6 @@ class InterferenceHandler(BaseHandler):
 
         count = len(data) // 4
         return list(struct.unpack(f">{count}f", data))
-
-
-class DarkNoiseHandler(BaseHandler):
-    def __init__(self):
-        super().__init__()
-        self._fft_processor = FFTProcessor()
-
-    def handle(self, msg: RawMessage):
-        if msg.command != Command.COLLECT_DARK_NOISE_RES:
-            return
-        try:
-            points = self._parse_spectrum_data(msg.data)
-            interference_data = np.array(points, dtype=np.float32)
-
-            spectrum_data = self._fft_processor.process(interference_data)
-
-            # # save data
-            # filename = f"data/interference_{time.strftime('%Y%m%d_%H%M%S')}.txt"
-            # np.savetxt(filename, interference_data, fmt="%.6f", delimiter=",")
-
-            # run callbacks
-            spectrum_data = SpectrumData(interference_data, spectrum_data)
-            self._run_callbacks(spectrum_data)
-        except Exception as e:
-            logger.error(f"failed to handle message {msg.command}: {e}")
-
-
-class BackgroundHandler(BaseHandler):
-    def __init__(self):
-        super().__init__()
-        self._fft_processor = FFTProcessor()
-
-    def handle(self, msg: RawMessage):
-        if msg.command != Command.COLLECT_BACKGROUND_RES:
-            return
-        try:
-            points = self._parse_spectrum_data(msg.data)
-            interference_data = np.array(points, dtype=np.float32)
-
-            spectrum_data = self._fft_processor.process(interference_data)
-
-            # # save data
-            # filename = f"data/interference_{time.strftime('%Y%m%d_%H%M%S')}.txt"
-            # np.savetxt(filename, interference_data, fmt="%.6f", delimiter=",")
-
-            # run callbacks
-            spectrum_data = SpectrumData(interference_data, spectrum_data)
-            self._run_callbacks(spectrum_data)
-        except Exception as e:
-            logger.error(f"failed to handle message {msg.command}: {e}")
-
-
-class SampleHandler(BaseHandler):
-    def __init__(self):
-        super().__init__()
-        self._fft_processor = FFTProcessor()
-
-    def handle(self, msg: RawMessage):
-        if msg.command != Command.COLLECT_SAMPLE_RES:
-            return
-        try:
-            points = self._parse_spectrum_data(msg.data)
-            interference_data = np.array(points, dtype=np.float32)
-
-            spectrum_data = self._fft_processor.process(interference_data)
-
-            # # save data
-            # filename = f"data/interference_{time.strftime('%Y%m%d_%H%M%S')}.txt"
-            # np.savetxt(filename, interference_data, fmt="%.6f", delimiter=",")
-
-            # run callbacks
-            spectrum_data = SpectrumData(interference_data, spectrum_data)
-            self._run_callbacks(spectrum_data)
-        except Exception as e:
-            logger.error(f"failed to handle message {msg.command}: {e}")
 
 
 import numpy as np

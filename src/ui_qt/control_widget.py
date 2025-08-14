@@ -7,11 +7,8 @@ from PySide6.QtWidgets import (
     QPushButton,
     QComboBox,
     QLabel,
-    QLineEdit,
-    QFrame,
     QFormLayout,
     QSpinBox,
-    QDoubleSpinBox,
 )
 from PySide6.QtCore import Slot
 

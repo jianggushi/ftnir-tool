@@ -6,7 +6,7 @@ from comm.protocol.message import Message
 from comm.protocol.command import Command
 from comm.transport.serial import ITransport
 from comm.protocol.parser import MessageParser
-from core.service.base import BaseHandler
+from core.service.base import BaseService
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ class CommManager:
 
         self._lock = threading.Lock()
         self._parser = MessageParser()
-        self._message_handlers: dict[Command, BaseHandler] = {}
+        self._message_handlers: dict[Command, BaseService] = {}
 
     def send_message(self, command: Command, data: bytes = b""):
         """发送消息"""
@@ -44,7 +44,7 @@ class CommManager:
         else:
             logger.warning(f"no handler found for message: {msg.command.name}")
 
-    def register_handler(self, command: Command, handler: BaseHandler):
+    def register_handler(self, command: Command, handler: BaseService):
         """注册消息处理器"""
         self._message_handlers[command] = handler
 
