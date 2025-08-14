@@ -118,13 +118,10 @@ class LightWidget(QGroupBox):
 
 
 class RotateMotorWidget(QGroupBox):
-    def __init__(self, qt_controller: QtController = None):
+    def __init__(self):
         super().__init__("旋转电机")
 
-        self.qt_controller = qt_controller
-
         self.setup_ui()
-        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
@@ -158,58 +155,16 @@ class RotateMotorWidget(QGroupBox):
 
         main_layout.addLayout(target_layout)
 
-    def setup_signals(self):
-        self.offset_button.clicked.connect(self.on_offset_set)
-        self.target_1_button.clicked.connect(self.on_target_1_set)
-        self.target_2_button.clicked.connect(self.on_target_2_set)
-        self.target_3_button.clicked.connect(self.on_target_3_set)
-        self.target_4_button.clicked.connect(self.on_target_4_set)
-        self.target_5_button.clicked.connect(self.on_target_5_set)
-        self.target_6_button.clicked.connect(self.on_target_6_set)
-        self.target_reset_button.clicked.connect(self.on_target_reset_set)
-
-    @Slot()
-    def on_offset_set(self):
+    def get_offset(self) -> int:
         offset = self.offset_spinbox.value()
-        self.qt_controller.set_rotate_offset(offset)
-
-    @Slot()
-    def on_target_1_set(self):
-        self.qt_controller.set_rotate_target(1)
-
-    @Slot()
-    def on_target_2_set(self):
-        self.qt_controller.set_rotate_target(2)
-
-    @Slot()
-    def on_target_3_set(self):
-        self.qt_controller.set_rotate_target(3)
-
-    @Slot()
-    def on_target_4_set(self):
-        self.qt_controller.set_rotate_target(4)
-
-    @Slot()
-    def on_target_5_set(self):
-        self.qt_controller.set_rotate_target(5)
-
-    @Slot()
-    def on_target_6_set(self):
-        self.qt_controller.set_rotate_target(6)
-
-    @Slot()
-    def on_target_reset_set(self):
-        self.qt_controller.set_rotate_target(0)
+        return offset
 
 
 class ScrewMotorWidget(QGroupBox):
-    def __init__(self, qt_controller: QtController = None):
+    def __init__(self):
         super().__init__("丝杆电机")
 
-        self.qt_controller = qt_controller
-
         self.setup_ui()
-        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
@@ -259,10 +214,9 @@ class ScrewMotorWidget(QGroupBox):
         self.target_8_button.clicked.connect(self.on_target_8_set)
         self.target_reset_button.clicked.connect(self.on_target_reset_set)
 
-    @Slot()
-    def on_offset_set(self):
+    def get_offset(self) -> int:
         offset = self.offset_spinbox.value()
-        self.qt_controller.set_screw_offset(offset)
+        return offset
 
     @Slot()
     def on_target_1_set(self):
@@ -381,11 +335,11 @@ class ControlWidget(QWidget):
         self.light_widget = LightWidget()
         main_layout.addWidget(self.light_widget)
 
-        rotate_widget = RotateMotorWidget()
-        main_layout.addWidget(rotate_widget)
+        self.rotate_widget = RotateMotorWidget()
+        main_layout.addWidget(self.rotate_widget)
 
-        screw_widget = ScrewMotorWidget()
-        main_layout.addWidget(screw_widget)
+        self.screw_widget = ScrewMotorWidget()
+        main_layout.addWidget(self.screw_widget)
 
         hardware_widget = HardwareSettingWidget()
         main_layout.addWidget(hardware_widget)

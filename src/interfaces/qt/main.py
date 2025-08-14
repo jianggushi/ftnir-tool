@@ -6,6 +6,9 @@ from comm.manager import CommManager
 from core.service.handshake import HandshakeService
 from core.service.light import LightService
 from core.service.light_stablity import LightStabilityService
+from core.service.motor import RotateMotorService
+from core.service.motor import ScrewMotorService
+
 from core.service.interference import DarkNoiseHandler
 from core.service.interference import BackgroundHandler
 from core.service.interference import SampleHandler
@@ -15,6 +18,8 @@ from ui_qt.main_window import MainWindow
 from .comm_controller import CommController
 from .light_controller import LightController
 from .light_stability import LightStabilityController
+from .motor_controller import RotateMotorController
+from .motor_controller import ScrewMotorController
 
 
 logger = logging.getLogger(__name__)
@@ -45,6 +50,20 @@ class MainController:
             self.light_svc,
             self.view.control_widget.light_widget,
             self.view.status_bar,
+        )
+
+        # 旋转电机控制
+        self.rotate_motor_svc = RotateMotorService(self.comm_manager)
+        self.rotate_motor_controller = RotateMotorController(
+            self.rotate_motor_svc,
+            self.view.control_widget.rotate_widget,
+        )
+
+        # 丝杠电机控制
+        self.screw_motor_svc = ScrewMotorService(self.comm_manager)
+        self.screw_motor_controller = ScrewMotorController(
+            self.screw_motor_svc,
+            self.view.control_widget.screw_widget,
         )
 
         # 光源稳定性检查

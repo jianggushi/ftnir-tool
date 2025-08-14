@@ -131,19 +131,6 @@ class QtController(QObject):
     def check_stop(self):
         self._send_message(Command.CHECK_STOP, b"\03")
 
-    def set_rotate_offset(self, offset: int):
-        self._send_message(Command.SET_ROTATE_OFFSET, struct.pack(">H", offset))
-
-    def set_rotate_target(self, target: int):
-        self._send_message(Command.SET_ROTATE_TARGET, struct.pack(">B", target))
-
-    def set_screw_offset(self, offset: int):
-
-        self._send_message(Command.SET_SCREW_OFFSET, struct.pack(">H", offset))
-
-    def set_screw_target(self, target: int):
-        self._send_message(Command.SET_SCREW_TARGET, struct.pack(">B", target))
-
     def set_hardware_setting(self, setting: int):
         self._send_message(Command.SET_HARDWARE_SETTING, struct.pack(">B", setting))
 
