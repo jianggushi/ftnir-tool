@@ -131,9 +131,6 @@ class QtController(QObject):
     def check_stop(self):
         self._send_message(Command.CHECK_STOP, b"\03")
 
-    def set_hardware_setting(self, setting: int):
-        self._send_message(Command.SET_HARDWARE_SETTING, struct.pack(">B", setting))
-
     def collect_dark_noise(self, num: int, continuous_mode: bool):
         """采集暗噪声"""
         if continuous_mode:

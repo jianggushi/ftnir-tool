@@ -256,13 +256,10 @@ class ScrewMotorWidget(QGroupBox):
 
 
 class HardwareSettingWidget(QGroupBox):
-    def __init__(self, qt_controller: QtController = None):
+    def __init__(self):
         super().__init__("硬件设置")
 
-        self.qt_controller = qt_controller
-
         self.setup_ui()
-        self.setup_signals()
 
     def setup_ui(self):
         main_layout = QVBoxLayout()
@@ -309,12 +306,8 @@ class HardwareSettingWidget(QGroupBox):
 
         main_layout.addLayout(button_layout)
 
-    def setup_signals(self):
-        self.save_button.clicked.connect(self.on_save_settings)
-
-    @Slot()
-    def on_save_settings(self):
-        # 保存设置
+    def get_settings(self):
+        # TODO:jxj
         pass
 
 
@@ -341,8 +334,8 @@ class ControlWidget(QWidget):
         self.screw_widget = ScrewMotorWidget()
         main_layout.addWidget(self.screw_widget)
 
-        hardware_widget = HardwareSettingWidget()
-        main_layout.addWidget(hardware_widget)
+        self.hardware_widget = HardwareSettingWidget()
+        main_layout.addWidget(self.hardware_widget)
 
         self.collect_widget = CollectWidget()
         main_layout.addWidget(self.collect_widget)
