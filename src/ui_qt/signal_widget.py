@@ -18,14 +18,12 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Slot
 
-from interfaces.qt.controller import QtController
 from .light_stability_widget import LightStabilityWidget
 
 
 class SignalWidget(QDialog):
-    def __init__(self, qt_controller: QtController):
+    def __init__(self):
         super().__init__()
-        self.qt_controller = qt_controller
         self.setWindowTitle("信号检查")
         self.resize(1200, 800)
         self.setup_ui()

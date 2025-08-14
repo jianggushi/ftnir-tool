@@ -18,7 +18,7 @@ from matplotlib.figure import Figure
 from util.util import init_font
 
 from core.model.spectrum import LightStabilityData
-from core.service.light_stablity import LightStabilityService
+from core.service.signal import LightStabilityService
 
 
 class LightStabilityWidget(QWidget):

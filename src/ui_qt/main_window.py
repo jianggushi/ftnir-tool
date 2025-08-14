@@ -5,13 +5,10 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QMenu,
     QSplitter,
-    QLabel,
 )
 from PySide6.QtCore import Qt
 
-from interfaces.qt.controller import QtController
 from .control_widget import ControlWidget
-from .interference_figure import InterferenceFigureWidget
 from .spectrum_figure import SpectrumFigureWidget
 from .setting_widget import (
     HardwareSettingWidget,
@@ -25,8 +22,6 @@ from .status_bar import StatusBarWidget
 
 class MainWindow(QMainWindow):
     def __init__(self):
-        self.qt_controller = QtController()
-
         super().__init__()
         self.setup_ui()
         self.setup_menu()
@@ -56,13 +51,13 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Add interference widget (top of right panel)
-        self.interference_widget = InterferenceFigureWidget()
-        right_layout.addWidget(self.interference_widget)
+        # Add spectrum widget (top of right panel)
+        self.spectrum_widget = SpectrumFigureWidget()
+        right_layout.addWidget(self.spectrum_widget)
 
         # Add spectrum widget (bottom of right panel)
-        self.spectrum_widget = SpectrumFigureWidget(self.qt_controller)
-        right_layout.addWidget(self.spectrum_widget)
+        # self.spectrum_widget = SpectrumFigureWidget(self.qt_controller)
+        # right_layout.addWidget(self.spectrum_widget)
 
         splitter.addWidget(right_panel)
 
@@ -92,14 +87,14 @@ class MainWindow(QMainWindow):
 
         self.hardware_dialog = HardwareSettingWidget(self)
         self.acquisition_dialog = CollectSettingWidget(self)
-        self.communication_dialog = CommunicationSettingWidget(self.qt_controller)
+        self.communication_dialog = CommunicationSettingWidget()
 
         # Create signal menu
         signal_menu = QMenu("信号", self)
         menu_bar.addMenu(signal_menu)
 
         signal_menu.addAction("信号检查", self.open_signal_widget)
-        self.signal_widget = SignalWidget(self.qt_controller)
+        self.signal_widget = SignalWidget()
 
         tool_menu = QMenu("工具", self)
         menu_bar.addMenu(tool_menu)

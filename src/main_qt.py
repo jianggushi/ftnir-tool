@@ -1,4 +1,5 @@
 import sys
+import os
 import logging
 from PySide6.QtWidgets import QApplication
 
@@ -8,6 +9,8 @@ from interfaces.qt.main import MainController
 
 
 logger = logging.getLogger(__name__)
+
+os.environ["QT_API"] = "PySide6"
 
 
 def main():

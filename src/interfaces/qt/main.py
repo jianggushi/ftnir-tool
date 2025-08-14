@@ -5,7 +5,7 @@ from comm.protocol.parser import Command
 from comm.manager import CommManager
 from core.service.handshake import HandshakeService
 from core.service.light import LightService
-from core.service.light_stablity import LightStabilityService
+from core.service.signal import LightStabilityService
 from core.service.motor import RotateMotorService
 from core.service.motor import ScrewMotorService
 from core.service.hardware import HardwareService
@@ -14,7 +14,7 @@ from ui_qt.main_window import MainWindow
 
 from .communication import CommController
 from .light import LightController
-from .light_stability import LightStabilityController
+from .signal import LightStabilityController
 from .motor import RotateMotorController
 from .motor import ScrewMotorController
 from .hardware import HardwareController
@@ -77,7 +77,7 @@ class MainController:
         self.collect_controller = CollectController(
             self.collect_svc,
             self.view.control_widget.collect_widget,
-            self.view.interference_widget,
+            self.view.spectrum_widget,
         )
         self.comm_manager.register_handler(
             Command.COLLECT_DARK_NOISE_RES, self.collect_svc

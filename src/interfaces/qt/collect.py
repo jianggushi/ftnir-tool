@@ -3,7 +3,7 @@ from PySide6.QtCore import Slot, QObject, Signal
 from core.service.collect import CollectService
 from core.model.spectrum import SpectrumData
 from ui_qt.collect_widget import CollectWidget
-from ui_qt.interference_figure import InterferenceFigureWidget
+from ui_qt.spectrum_figure import SpectrumFigureWidget
 
 
 class CollectController(QObject):
@@ -13,19 +13,19 @@ class CollectController(QObject):
         self,
         svc: CollectService,
         view: CollectWidget,
-        interference_figure: InterferenceFigureWidget,
+        spectrum_figure: SpectrumFigureWidget,
     ):
 
         super().__init__()
 
         self.svc = svc
         self.view = view
-        self.interference_figure = interference_figure
+        self.spectrum_figure = spectrum_figure
 
         self.svc.add_callback(self.on_receive_data)
 
         self.collect_data.connect(self.view.on_receive_data)
-        self.collect_data.connect(self.interference_figure.on_receive_data)
+        self.collect_data.connect(self.spectrum_figure.on_receive_data)
 
         self.view.start_button.clicked.connect(self.on_start_collect)
         self.view.stop_button.clicked.connect(self.on_stop_collect)

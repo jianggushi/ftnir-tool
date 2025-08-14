@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Slot
 
-from interfaces.qt.controller import QtController
 from .collect_widget import CollectWidget
 
 

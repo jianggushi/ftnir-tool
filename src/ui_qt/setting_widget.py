@@ -10,8 +10,6 @@ from PySide6.QtWidgets import (
     QRadioButton,
 )
 
-from interfaces.qt.controller import QtController
-
 
 class HardwareSettingWidget(QDialog):
     def __init__(self, parent=None):
@@ -134,8 +132,8 @@ class CollectSettingWidget(QDialog):
 
 
 class CommunicationSettingWidget(QDialog):
-    def __init__(self, qt_controller: QtController):
-        self.qt_controller = qt_controller
+    def __init__(self):
+        self.qt_controller = None
         super().__init__()
         self.setWindowTitle("通信设置")
         self.resize(600, 400)
