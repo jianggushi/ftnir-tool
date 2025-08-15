@@ -5,7 +5,7 @@ from comm.protocol.parser import Command
 from comm.manager import CommManager
 from core.service.handshake import HandshakeService
 from core.service.light import LightService
-from core.service.signal import LightStabilityService
+from core.service.signalcheck import LightStabilityService
 from core.service.motor import RotateMotorService
 from core.service.motor import ScrewMotorService
 from core.service.hardware import HardwareService
@@ -14,7 +14,7 @@ from ui_qt.main_window import MainWindow
 
 from .communication import CommController
 from .light import LightController
-from .signal import LightStabilityController
+from .signalcheck import LightStabilityController
 from .motor import RotateMotorController
 from .motor import ScrewMotorController
 from .hardware import HardwareController

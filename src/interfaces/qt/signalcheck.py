@@ -1,6 +1,6 @@
 from PySide6.QtCore import Slot, QObject, Signal
 
-from core.service.signal import LightStabilityService
+from core.service.signalcheck import LightStabilityService
 from core.model.spectrum import LightStabilityData
 from ui_qt.light_stability_widget import LightStabilityWidget
 from core.model.engine import db
