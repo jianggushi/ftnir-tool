@@ -4,7 +4,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-from core.model.spectrum import SpectrumData
+from core.model.spectrum import CollectData
 
 from util.util import init_font
 
@@ -111,14 +111,13 @@ class SpectrumFigureWidget(QWidget):
         self.aline.set_data([], [])
         self.canvas.draw()
 
-    def on_receive_data(self, data: SpectrumData):
-        pass
-        # interference_data = data.interference
-        # x_data = list(range(interference_data.shape[0]))
-        # self.update_aline(x_data, interference_data.tolist())
-        # spectrum_data = data.spectrum
-        # x_data = list(range(spectrum_data.shape[0]))
-        # self.update_bline(x_data, spectrum_data.tolist())
+    def on_receive_data(self, data: CollectData):
+        interference_data = data.interference_data
+        x_data = list(range(interference_data.shape[0]))
+        self.update_aline(x_data, interference_data.tolist())
+        spectrum_data = data.spectrum_data
+        x_data = list(range(spectrum_data.shape[0]))
+        self.update_bline(x_data, spectrum_data.tolist())
 
 
 if __name__ == "__main__":

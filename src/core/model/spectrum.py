@@ -21,6 +21,12 @@ class SpectrumData:
 
 
 @dataclass
+class CollectData:
+    interference_data: np.ndarray
+    spectrum_data: np.ndarray
+
+
+@dataclass
 class LightStabilityData:
     interference_data: np.ndarray  # 干涉数据
     interference_max_max: float  # 干涉最大强度的最大值

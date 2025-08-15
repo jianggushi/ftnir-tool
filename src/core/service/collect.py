@@ -5,7 +5,7 @@ from collections import deque
 
 from comm.protocol.parser import RawMessage, Command
 from comm.manager import CommManager
-from core.model.spectrum import SpectrumData
+from core.model.spectrum import CollectData
 from core.processor.interference import FFTProcessor
 
 from .base import BaseService, parse_interference_data
@@ -39,7 +39,7 @@ class CollectService(BaseService):
             # np.savetxt(filename, interference_data, fmt="%.6f", delimiter=",")
 
             # run callbacks
-            spectrum_data = SpectrumData(
+            spectrum_data = CollectData(
                 interference_data,
                 spectrum_data,
             )

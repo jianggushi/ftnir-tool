@@ -1,7 +1,7 @@
 from PySide6.QtCore import Slot, QObject, Signal
 
 from core.service.collect import CollectService
-from core.model.spectrum import SpectrumData
+from core.model.spectrum import CollectData
 from ui_qt.collect_widget import CollectWidget
 from ui_qt.spectrum_figure import SpectrumFigureWidget
 
@@ -47,5 +47,5 @@ class CollectController(QObject):
         self.svc.stop_collect()
         self.view.stop_collect()
 
-    def on_receive_data(self, data: SpectrumData):
+    def on_receive_data(self, data: CollectData):
         self.collect_data.emit(data)
