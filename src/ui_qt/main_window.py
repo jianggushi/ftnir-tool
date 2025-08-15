@@ -15,7 +15,7 @@ from .setting_widget import (
     CollectSettingWidget,
     CommunicationSettingWidget,
 )
-from .signal_widget import SignalWidget
+from .signal_check_widget import SignalCheckWidget
 from .light_stability_widget import LightStabilityWidget
 from .log_widget import LogWidget
 from .status_bar import StatusBarWidget
@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
         menu_bar.addMenu(signal_menu)
 
         # signal_menu.addAction("信号检查", self.open_signal_widget)
-        # self.signal_widget = SignalWidget()
+        # self.signal_widget = SignalCheckWidget()
 
         signal_menu.addAction("光源稳定性检查", self.open_light_stability_widget)
         self.light_stability_widget = LightStabilityWidget()

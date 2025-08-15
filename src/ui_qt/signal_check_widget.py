@@ -21,7 +21,7 @@ from PySide6.QtCore import Slot
 from .light_stability_widget import LightStabilityWidget
 
 
-class SignalWidget(QDialog):
+class SignalCheckWidget(QDialog):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("信号检查")

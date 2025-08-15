@@ -6,7 +6,7 @@ from collections import deque
 from comm.protocol.parser import RawMessage, Command
 from comm.manager import CommManager
 from core.model.spectrum import SpectrumData
-from core.processor.fft_processor import FFTProcessor
+from core.processor.interference import FFTProcessor
 
 from .base import BaseService, parse_interference_data
 
