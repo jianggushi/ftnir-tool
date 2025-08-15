@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from core.model.base import Base
-from core.model.light_stability import LightStability
+from core.model.light_stability import LightStabilityResult
 
 
 class DB:
@@ -13,7 +13,7 @@ class DB:
             },
             echo=True,
         )
-        self.Session = sessionmaker(self.engine)
+        self.Session = sessionmaker(self.engine, autoflush=True)
 
         Base.metadata.create_all(self.engine)
 

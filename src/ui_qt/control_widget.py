@@ -337,17 +337,3 @@ class ControlWidget(QWidget):
         main_layout.addWidget(self.collect_widget)
 
         main_layout.addStretch()
-
-
-if __name__ == "__main__":
-    import sys
-    from PySide6.QtWidgets import QApplication
-    from config.log import setup_logging
-
-    setup_logging()
-
-    app = QApplication(sys.argv)
-    qt_controller = QtController()  # 创建 QtController 实例
-    widget = ControlWidget(qt_controller=qt_controller)
-    widget.show()
-    app.exit(app.exec())

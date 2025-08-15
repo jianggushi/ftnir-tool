@@ -112,12 +112,13 @@ class SpectrumFigureWidget(QWidget):
         self.canvas.draw()
 
     def on_receive_data(self, data: SpectrumData):
-        interference_data = data.interference
-        x_data = list(range(interference_data.shape[0]))
-        self.update_aline(x_data, interference_data.tolist())
-        spectrum_data = data.spectrum
-        x_data = list(range(spectrum_data.shape[0]))
-        self.update_bline(x_data, spectrum_data.tolist())
+        pass
+        # interference_data = data.interference
+        # x_data = list(range(interference_data.shape[0]))
+        # self.update_aline(x_data, interference_data.tolist())
+        # spectrum_data = data.spectrum
+        # x_data = list(range(spectrum_data.shape[0]))
+        # self.update_bline(x_data, spectrum_data.tolist())
 
 
 if __name__ == "__main__":

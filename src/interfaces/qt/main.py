@@ -91,7 +91,7 @@ class MainController:
         self.light_stability_svc = LightStabilityService(self.comm_manager)
         self.light_stability_controller = LightStabilityController(
             self.light_stability_svc,
-            self.view.signal_widget.light_stability_widget,
+            self.view.light_stability_widget,
         )
         self.comm_manager.register_handler(
             Command.CHECK_LIGHT_STABILITY_RES, self.light_stability_svc
