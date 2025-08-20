@@ -9,6 +9,21 @@ dependencies = [
     "numpy>=2.3.1",
     "pyserial>=3.5",
     "pyside6>=6.9.1",
+    "scipy>=1.16.1",
+    "sqlalchemy>=2.0.43",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+    "src",
+]
+testpaths = [
+    "tests",
 ]
 
 [[tool.uv.index]]
