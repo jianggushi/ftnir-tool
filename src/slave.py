@@ -171,7 +171,7 @@ class SlaveManager:
 
         while self.collect_running and (num > 0 or continuous_mode):
             t, sig = simulate_sample_interferogram(
-                "data/insa/001 _2_20250306T103419.txt"
+                "../data/insa/001 _2_20250306T103419.txt"
             )
 
             test_data = sig.tolist()

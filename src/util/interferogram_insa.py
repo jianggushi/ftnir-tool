@@ -49,7 +49,7 @@ def simulate_sample_interferogram_with_noise(
 if __name__ == "__main__":
     # fig, ax = plt.subplots()
     x, interferogram = simulate_sample_interferogram(
-        "data/insa/001 _2_20250306T103419.txt"
+        "../data/insa/001 _2_20250306T103419.txt"
     )
     # plt.subplot(2, 1, 1)
     # plt.plot(x, interferogram)
