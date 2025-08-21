@@ -2,7 +2,7 @@ from PySide6.QtCore import Slot, QObject, Signal
 
 from core.service.collect import CollectService
 from core.model.spectrum import CollectData
-from ui_qt.collect_widget import CollectWidget
+from ui_qt.control_collect import CollectWidget
 from ui_qt.spectrum_figure import SpectrumFigureWidget
 
 

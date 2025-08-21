@@ -15,9 +15,9 @@ from .setting_widget import (
     CollectSettingWidget,
     CommunicationSettingWidget,
 )
-from .light_stability_widget import LightStabilityWidget
-from .wave_accuracy_widget import WaveAccuracyWidget
-from .wave_repeatability_widget import WaveRepeatabilityWidget
+from .signal_light_stability import LightStabilityWidget
+from .signal_wave_accuracy import WaveAccuracyWidget
+from .signal_wave_repeatability import WaveRepeatabilityWidget
 from .log_widget import LogWidget
 from .status_bar import StatusBarWidget
 

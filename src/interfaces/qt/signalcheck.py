@@ -10,9 +10,9 @@ from core.service.signalcheck import (
     WaveAccuracyService,
     WaveRepeatabilityService,
 )
-from ui_qt.light_stability_widget import LightStabilityWidget
-from ui_qt.wave_accuracy_widget import WaveAccuracyWidget
-from ui_qt.wave_repeatability_widget import WaveRepeatabilityWidget
+from ui_qt.signal_light_stability import LightStabilityWidget
+from ui_qt.signal_wave_accuracy import WaveAccuracyWidget
+from ui_qt.signal_wave_repeatability import WaveRepeatabilityWidget
 
 
 class LightStabilityController(QObject):
