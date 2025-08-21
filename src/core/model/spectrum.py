@@ -34,3 +34,9 @@ class LightStabilityData:
     spectrum_data: np.ndarray  # 光谱数据
     spectrum_max_max: float  # 光谱最大强度的最大值
     # spectrum_min_max: float  # 光谱最大强度的最小值
+
+
+@dataclass
+class TemperatureData:
+    data: float
+    timestamp: int

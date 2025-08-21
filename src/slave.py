@@ -2,6 +2,7 @@ import logging
 import struct
 import time
 import sys
+import random
 import threading
 from typing import Callable
 
@@ -40,6 +41,7 @@ class SlaveManager:
             Command.COLLECT_BACKGROUND_REQ: self.receive_collect_background,
             Command.COLLECT_SAMPLE_REQ: self.receive_collect_sample,
             Command.COLLECT_STOP_REQ: self.receive_collect_stop,
+            Command.TEMPERATURE_REQ: self.receive_temperature_req,
         }
 
     def connect(self):
@@ -187,6 +189,15 @@ class SlaveManager:
         if raw_message.command != Command.COLLECT_STOP_REQ:
             return
         self.collect_running = False
+
+    def receive_temperature_req(self, raw_message: RawMessage):
+        """处理温度请求"""
+        if raw_message.command != Command.TEMPERATURE_REQ:
+            return
+        # 随机20-30度
+        temperature = random.uniform(20.0, 30.0)
+        data = struct.pack(">f", temperature)
+        self._send_message(Command.TEMPERATURE_RES, data)
 
 
 def run():

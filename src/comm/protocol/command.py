@@ -18,9 +18,6 @@ class Command(enum.IntEnum):
     # 停止检测
     CHECK_STOP = 0x011F
 
-    START_COLLECT = 0x10
-    STOP_COLLECT = 0x11
-
     # 采集暗噪声
     COLLECT_DARK_NOISE_REQ = 0x0120
     COLLECT_DARK_NOISE_RES = 0x0220
@@ -32,6 +29,16 @@ class Command(enum.IntEnum):
     COLLECT_SAMPLE_RES = 0x0222
     # 采集停止
     COLLECT_STOP_REQ = 0x012F
+
+    # 获取光源状态
+    LIGHT_STATUS_REQ = 0x0130
+    LIGHT_STATUS_RES = 0x0230
+    # 获取激光状态
+    LASER_STATUS_REQ = 0x0131
+    LASER_STATUS_RES = 0x0231
+    # 获取温度
+    TEMPERATURE_REQ = 0x0132
+    TEMPERATURE_RES = 0x0232
 
     # 打开光源
     TURN_ON_LIGHT = 0x0301

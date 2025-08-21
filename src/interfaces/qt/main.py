@@ -1,5 +1,7 @@
 import logging
 
+from PySide6.QtCore import Slot
+
 from comm.transport.serial import SerialTransport
 from comm.protocol.parser import Command
 from comm.manager import CommManager
@@ -10,15 +12,18 @@ from core.service.motor import RotateMotorService
 from core.service.motor import ScrewMotorService
 from core.service.hardware import HardwareService
 from core.service.collect import CollectService
+from core.service.temperature import TemperatureService
+
 from ui_qt.main_window import MainWindow
 
-from .communication import CommController
+from .communication import CommController, ConnectionStatus
 from .light import LightController
 from .signalcheck import LightStabilityController
 from .motor import RotateMotorController
 from .motor import ScrewMotorController
 from .hardware import HardwareController
 from .collect import CollectController
+from .temperature import TemperatureController
 
 
 logger = logging.getLogger(__name__)
@@ -42,6 +47,7 @@ class MainController:
         )
         self.comm_manager.register_handler(Command.HANDSHAKE_REQ, self.handshake_svc)
         self.comm_manager.register_handler(Command.HANDSHAKE_RES, self.handshake_svc)
+        self.comm_controller.connection_status.connect(self.on_connection_status)
 
         # 光源控制
         self.light_svc = LightService(self.comm_manager)
@@ -96,3 +102,16 @@ class MainController:
         self.comm_manager.register_handler(
             Command.CHECK_LIGHT_STABILITY_RES, self.light_stability_svc
         )
+
+        self.temperature_svc = TemperatureService(self.comm_manager)
+        self.temperature_controller = TemperatureController(
+            self.temperature_svc,
+            None,
+            self.view.status_bar,
+        )
+
+    @Slot(str)
+    def on_connection_status(self, status: str):
+        print("连接状态:", status)
+        if status == ConnectionStatus.CONNECTED.value:
+            self.temperature_controller.start_polling()

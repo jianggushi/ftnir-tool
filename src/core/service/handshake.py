@@ -39,6 +39,7 @@ class HandshakeService(BaseService):
             if self._handshake_timer:
                 self._handshake_timer.cancel()
                 self._handshake_timer = None
+            self._run_callbacks()
         elif msg.command == Command.HANDSHAKE_REQ:
             self.comm_manager.send_message(Command.HANDSHAKE_RES, b"")
 

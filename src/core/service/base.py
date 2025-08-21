@@ -23,7 +23,7 @@ class BaseService(ABC):
     def clear_callbacks(self):
         self._callbacks.clear()
 
-    def _run_callbacks(self, data: object):
+    def _run_callbacks(self, data: object = None):
         for callback in self._callbacks:
             try:
                 callback(data)
