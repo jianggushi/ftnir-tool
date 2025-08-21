@@ -42,6 +42,7 @@ class SlaveManager:
             Command.COLLECT_SAMPLE_REQ: self.receive_collect_sample,
             Command.COLLECT_STOP_REQ: self.receive_collect_stop,
             Command.TEMPERATURE_REQ: self.receive_temperature_req,
+            Command.HUMIDITY_REQ: self.receive_humidity_req,
         }
 
     def connect(self):
@@ -198,6 +199,15 @@ class SlaveManager:
         temperature = random.uniform(20.0, 30.0)
         data = struct.pack(">f", temperature)
         self._send_message(Command.TEMPERATURE_RES, data)
+
+    def receive_humidity_req(self, raw_message: RawMessage):
+        """处理湿度请求"""
+        if raw_message.command != Command.HUMIDITY_REQ:
+            return
+        # 随机20-30度
+        humidity = random.uniform(60.0, 90.0)
+        data = struct.pack(">f", humidity)
+        self._send_message(Command.HUMIDITY_RES, data)
 
 
 def run():

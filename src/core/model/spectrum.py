@@ -40,3 +40,9 @@ class LightStabilityData:
 class TemperatureData:
     data: float
     timestamp: int
+
+
+@dataclass
+class HumidityData:
+    data: float
+    timestamp: int

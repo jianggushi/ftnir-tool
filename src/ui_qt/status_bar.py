@@ -52,6 +52,10 @@ class StatusBarWidget(QStatusBar):
     def update_temperature_label(self, label: str):
         self.temperature_label.setText(f"温度：{label}  ")
 
+    @Slot(str)
+    def update_humidity_label(self, label: str):
+        self.humidity_label.setText(f"湿度：{label}  ")
+
     @Slot(str, object)
     def update_label(self, key: str, value: object):
         if key in self.labels:

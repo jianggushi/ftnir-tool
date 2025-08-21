@@ -39,6 +39,9 @@ class Command(enum.IntEnum):
     # 获取温度
     TEMPERATURE_REQ = 0x0132
     TEMPERATURE_RES = 0x0232
+    # 获取湿度
+    HUMIDITY_REQ = 0x0133
+    HUMIDITY_RES = 0x0233
 
     # 打开光源
     TURN_ON_LIGHT = 0x0301

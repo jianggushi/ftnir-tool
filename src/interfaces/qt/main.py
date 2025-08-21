@@ -5,25 +5,31 @@ from PySide6.QtCore import Slot
 from comm.transport.serial import SerialTransport
 from comm.protocol.parser import Command
 from comm.manager import CommManager
-from core.service.handshake import HandshakeService
-from core.service.light import LightService
-from core.service.signalcheck import LightStabilityService
-from core.service.motor import RotateMotorService
-from core.service.motor import ScrewMotorService
-from core.service.hardware import HardwareService
-from core.service.collect import CollectService
-from core.service.temperature import TemperatureService
-
 from ui_qt.main_window import MainWindow
 
+from core.service.handshake import HandshakeService
 from .communication import CommController, ConnectionStatus
+
+from core.service.light import LightService
 from .light import LightController
+
+from core.service.signalcheck import LightStabilityService
 from .signalcheck import LightStabilityController
-from .motor import RotateMotorController
-from .motor import ScrewMotorController
+
+from core.service.motor import RotateMotorService, ScrewMotorService
+from .motor import RotateMotorController, ScrewMotorController
+
+from core.service.hardware import HardwareService
 from .hardware import HardwareController
+
+from core.service.collect import CollectService
 from .collect import CollectController
+
+from core.service.temperature import TemperatureService
 from .temperature import TemperatureController
+
+from core.service.humidity import HumidityService
+from .humidity import HumidityController
 
 
 logger = logging.getLogger(__name__)
@@ -110,8 +116,15 @@ class MainController:
             self.view.status_bar,
         )
 
+        self.humidity_svc = HumidityService(self.comm_manager)
+        self.humidity_controller = HumidityController(
+            self.humidity_svc,
+            None,
+            self.view.status_bar,
+        )
+
     @Slot(str)
     def on_connection_status(self, status: str):
-        print("连接状态:", status)
         if status == ConnectionStatus.CONNECTED.value:
             self.temperature_controller.start_polling()
+            self.humidity_controller.start_polling()
