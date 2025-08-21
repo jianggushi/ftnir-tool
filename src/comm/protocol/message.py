@@ -29,28 +29,6 @@ class Message:
     def __init__(self):
         pass
 
-    # def __init__(self, command: Command, payload: bytes):
-    #     self.command = Command
-    #     self.payload = payload
-    #     self.payload_len = len(payload)
-    #     self.checksum = 0
-
-    # @staticmethod
-    # def pack(self) -> bytes:
-    #     """
-    #     序列化消息
-    #     """
-    #     pass
-
-    # @staticmethod
-    # def unpack(self, data: bytes):
-    #     """
-    #     反序列化消息
-    #     """
-    #     pass
-
-    # def __repr__(self):
-    #     pass
     @staticmethod
     def pack(command: Command, data: bytes = b"") -> bytes:
         """

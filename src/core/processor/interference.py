@@ -4,9 +4,9 @@ from scipy import signal
 from .base_processor import BaseProcessor
 
 
-class NormalizeProcessor(BaseProcessor):
+class RemoveDCProcessor(BaseProcessor):
     """
-    归一化处理器/去直流处理器
+    去直流处理器
     """
 
     def __init__(self):
@@ -17,6 +17,9 @@ class NormalizeProcessor(BaseProcessor):
         参考：https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.detrend.html
         """
         return signal.detrend(data, type="constant")
+
+    def process_v1(self, data: np.ndarray) -> np.ndarray:
+        return data - np.mean(data)
 
 
 class FFTProcessor(BaseProcessor):
