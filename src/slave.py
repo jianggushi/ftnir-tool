@@ -37,6 +37,7 @@ class SlaveManager:
             Command.HANDSHAKE_REQ: self.receive_handshake_req,
             Command.CHECK_LIGHT_STABILITY: self.receive_check_light_stability,
             Command.CHECK_STANDARD_WAVE_ACCURACY: self.receive_check_wave_accuracy,
+            Command.CHECK_STANDARD_WAVE_REPEATABILITY: self.receive_check_repeatability,
             Command.CHECK_STOP: self.receive_check_stop,
             Command.COLLECT_DARK_NOISE_REQ: self.receive_collect_dark_noise,
             Command.COLLECT_BACKGROUND_REQ: self.receive_collect_background,
@@ -119,6 +120,15 @@ class SlaveManager:
         test_data = sig.tolist()
         data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
         self._send_message(Command.CHECK_STANDARD_WAVE_ACCURACY_RES, data_bytes)
+
+    def receive_check_repeatability(self, raw_message: RawMessage):
+        """处理波数重复性检测请求"""
+        if raw_message.command != Command.CHECK_STANDARD_WAVE_REPEATABILITY:
+            return
+        t, sig, freq = generate_test_signal()
+        test_data = sig.tolist()
+        data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
+        self._send_message(Command.CHECK_STANDARD_WAVE_REPEATABILITY_RES, data_bytes)
 
     def receive_check_stop(self, raw_message: RawMessage):
         """处理停止检测请求"""

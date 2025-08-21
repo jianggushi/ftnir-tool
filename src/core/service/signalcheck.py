@@ -105,9 +105,12 @@ class WaveAccuracyService(BaseService):
 class WaveRepeatabilityService(BaseService):
     def __init__(self, comm_manager: CommManager):
         super().__init__()
+        self._fft_processor = FFTProcessor()
 
         self.comm_manager = comm_manager
-        self._fft_processor = FFTProcessor()
+        self.comm_manager.register_handler(
+            Command.CHECK_STANDARD_WAVE_REPEATABILITY_RES, self
+        )
 
     def handle(self, msg: RawMessage):
         if msg.command != Command.CHECK_STANDARD_WAVE_REPEATABILITY_RES:

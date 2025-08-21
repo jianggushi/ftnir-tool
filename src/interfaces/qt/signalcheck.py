@@ -5,9 +5,14 @@ from core.model.engine import db
 from core.model.light_stability import LightStabilityResult
 from core.model.spectrum import LightStabilityData
 
-from core.service.signalcheck import LightStabilityService, WaveAccuracyService
+from core.service.signalcheck import (
+    LightStabilityService,
+    WaveAccuracyService,
+    WaveRepeatabilityService,
+)
 from ui_qt.light_stability_widget import LightStabilityWidget
 from ui_qt.wave_accuracy_widget import WaveAccuracyWidget
+from ui_qt.wave_repeatability_widget import WaveRepeatabilityWidget
 
 
 class LightStabilityController(QObject):
@@ -74,7 +79,7 @@ class LightStabilityController(QObject):
 
 
 class WaveAccuracyController(QObject):
-    wave_accuracy_data = Signal(object)
+    spectrum_data = Signal(object)
 
     def __init__(self, svc: WaveAccuracyService, view: WaveAccuracyWidget):
         super().__init__()
@@ -87,7 +92,7 @@ class WaveAccuracyController(QObject):
         self.view.start_button.clicked.connect(self.on_start_check)
         self.view.stop_button.clicked.connect(self.on_stop_check)
 
-        self.wave_accuracy_data.connect(self.view.on_receive_data)
+        self.spectrum_data.connect(self.view.on_receive_data)
 
     @Slot()
     def on_start_check(self):
@@ -102,4 +107,36 @@ class WaveAccuracyController(QObject):
         # self.view.stop_button.setEnabled(False)
 
     def receive_data(self, data: LightStabilityData):
-        self.wave_accuracy_data.emit(data)
+        self.spectrum_data.emit(data)
+
+
+class WaveRepeatabilityController(QObject):
+    spectrum_data = Signal(object)
+
+    def __init__(self, svc: WaveRepeatabilityService, view: WaveRepeatabilityWidget):
+        super().__init__()
+
+        self.svc = svc
+        self.view = view
+
+        self.svc.add_callback(self.receive_data)
+
+        self.view.start_button.clicked.connect(self.on_start_check)
+        self.view.stop_button.clicked.connect(self.on_stop_check)
+
+        self.spectrum_data.connect(self.view.on_receive_data)
+
+    @Slot()
+    def on_start_check(self):
+        self.svc.start_check()
+        # self.view.start_button.setEnabled(False)
+        # self.view.stop_button.setEnabled(True)
+
+    @Slot()
+    def on_stop_check(self):
+        self.svc.stop_check()
+        # self.view.start_button.setEnabled(True)
+        # self.view.stop_button.setEnabled(False)
+
+    def receive_data(self, data: LightStabilityData):
+        self.spectrum_data.emit(data)

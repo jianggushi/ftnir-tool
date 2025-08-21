@@ -15,9 +15,9 @@ from .setting_widget import (
     CollectSettingWidget,
     CommunicationSettingWidget,
 )
-from .signal_check_widget import SignalCheckWidget
 from .light_stability_widget import LightStabilityWidget
 from .wave_accuracy_widget import WaveAccuracyWidget
+from .wave_repeatability_widget import WaveRepeatabilityWidget
 from .log_widget import LogWidget
 from .status_bar import StatusBarWidget
 
@@ -104,6 +104,9 @@ class MainWindow(QMainWindow):
         signal_menu.addAction("波数准确性", self.open_wave_accuracy_widget)
         self.wave_accuracy_widget = WaveAccuracyWidget()
 
+        signal_menu.addAction("波数重复性", self.open_wave_repeatability_widget)
+        self.wave_repeatability_widget = WaveRepeatabilityWidget()
+
         tool_menu = QMenu("工具", self)
         menu_bar.addMenu(tool_menu)
         tool_menu.addAction("日志", self.open_log_widget)
@@ -129,6 +132,9 @@ class MainWindow(QMainWindow):
 
     def open_wave_accuracy_widget(self):
         self.wave_accuracy_widget.show()
+
+    def open_wave_repeatability_widget(self):
+        self.wave_repeatability_widget.show()
 
     def open_log_widget(self):
         self.log_widget.show()

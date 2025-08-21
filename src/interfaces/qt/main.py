@@ -13,8 +13,16 @@ from .communication import CommController, ConnectionStatus
 from core.service.light import LightService
 from .light import LightController
 
-from core.service.signalcheck import LightStabilityService, WaveAccuracyService
-from .signalcheck import LightStabilityController, WaveAccuracyController
+from core.service.signalcheck import (
+    LightStabilityService,
+    WaveAccuracyService,
+    WaveRepeatabilityService,
+)
+from .signalcheck import (
+    LightStabilityController,
+    WaveAccuracyController,
+    WaveRepeatabilityController,
+)
 
 from core.service.motor import RotateMotorService, ScrewMotorService
 from .motor import RotateMotorController, ScrewMotorController
@@ -111,6 +119,13 @@ class MainController:
         self.wave_accuracy_controller = WaveAccuracyController(
             self.wave_accuracy_svc,
             self.view.wave_accuracy_widget,
+        )
+
+        # 波长重复性检查
+        self.wave_repeatability_svc = WaveRepeatabilityService(self.comm_manager)
+        self.wave_repeatability_controller = WaveRepeatabilityController(
+            self.wave_repeatability_svc,
+            self.view.wave_repeatability_widget,
         )
 
         self.temperature_svc = TemperatureService(self.comm_manager)
