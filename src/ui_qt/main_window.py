@@ -17,6 +17,7 @@ from .setting_widget import (
 )
 from .signal_check_widget import SignalCheckWidget
 from .light_stability_widget import LightStabilityWidget
+from .wave_accuracy_widget import WaveAccuracyWidget
 from .log_widget import LogWidget
 from .status_bar import StatusBarWidget
 
@@ -97,8 +98,11 @@ class MainWindow(QMainWindow):
         # signal_menu.addAction("信号检查", self.open_signal_widget)
         # self.signal_widget = SignalCheckWidget()
 
-        signal_menu.addAction("光源稳定性检查", self.open_light_stability_widget)
+        signal_menu.addAction("光源稳定性", self.open_light_stability_widget)
         self.light_stability_widget = LightStabilityWidget()
+
+        signal_menu.addAction("波数准确性", self.open_wave_accuracy_widget)
+        self.wave_accuracy_widget = WaveAccuracyWidget()
 
         tool_menu = QMenu("工具", self)
         menu_bar.addMenu(tool_menu)
@@ -122,6 +126,9 @@ class MainWindow(QMainWindow):
 
     def open_light_stability_widget(self):
         self.light_stability_widget.show()
+
+    def open_wave_accuracy_widget(self):
+        self.wave_accuracy_widget.show()
 
     def open_log_widget(self):
         self.log_widget.show()

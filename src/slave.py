@@ -36,6 +36,7 @@ class SlaveManager:
         self._message_handlers: dict[Command, Callable[[RawMessage], None]] = {
             Command.HANDSHAKE_REQ: self.receive_handshake_req,
             Command.CHECK_LIGHT_STABILITY: self.receive_check_light_stability,
+            Command.CHECK_STANDARD_WAVE_ACCURACY: self.receive_check_wave_accuracy,
             Command.CHECK_STOP: self.receive_check_stop,
             Command.COLLECT_DARK_NOISE_REQ: self.receive_collect_dark_noise,
             Command.COLLECT_BACKGROUND_REQ: self.receive_collect_background,
@@ -109,6 +110,15 @@ class SlaveManager:
             data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
             self._send_message(Command.CHECK_LIGHT_STABILITY_RES, data_bytes)
             time.sleep(0.1)
+
+    def receive_check_wave_accuracy(self, raw_message: RawMessage):
+        """处理波数准确性检测请求"""
+        if raw_message.command != Command.CHECK_STANDARD_WAVE_ACCURACY:
+            return
+        t, sig, freq = generate_test_signal()
+        test_data = sig.tolist()
+        data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
+        self._send_message(Command.CHECK_STANDARD_WAVE_ACCURACY_RES, data_bytes)
 
     def receive_check_stop(self, raw_message: RawMessage):
         """处理停止检测请求"""

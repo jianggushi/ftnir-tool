@@ -13,8 +13,8 @@ from .communication import CommController, ConnectionStatus
 from core.service.light import LightService
 from .light import LightController
 
-from core.service.signalcheck import LightStabilityService
-from .signalcheck import LightStabilityController
+from core.service.signalcheck import LightStabilityService, WaveAccuracyService
+from .signalcheck import LightStabilityController, WaveAccuracyController
 
 from core.service.motor import RotateMotorService, ScrewMotorService
 from .motor import RotateMotorController, ScrewMotorController
@@ -105,8 +105,12 @@ class MainController:
             self.light_stability_svc,
             self.view.light_stability_widget,
         )
-        self.comm_manager.register_handler(
-            Command.CHECK_LIGHT_STABILITY_RES, self.light_stability_svc
+
+        # 波长准确性检查
+        self.wave_accuracy_svc = WaveAccuracyService(self.comm_manager)
+        self.wave_accuracy_controller = WaveAccuracyController(
+            self.wave_accuracy_svc,
+            self.view.wave_accuracy_widget,
         )
 
         self.temperature_svc = TemperatureService(self.comm_manager)
