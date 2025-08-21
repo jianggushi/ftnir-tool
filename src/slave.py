@@ -6,7 +6,8 @@ import threading
 from typing import Callable
 
 from config.log import setup_logging
-from util.signal import generate_test_signal
+from util.interferogram import generate_test_signal
+from util.interferogram_insa import simulate_sample_interferogram
 from comm.protocol.command import Command
 from comm.transport.serial import SerialTransport
 from comm.protocol.parser import MessageParser
@@ -169,7 +170,10 @@ class SlaveManager:
         self.collect_running = True
 
         while self.collect_running and (num > 0 or continuous_mode):
-            t, sig, freq = generate_test_signal()
+            t, sig = simulate_sample_interferogram(
+                "data/insa/001 _2_20250306T103419.txt"
+            )
+
             test_data = sig.tolist()
             data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
             self._send_message(Command.COLLECT_SAMPLE_RES, data_bytes)

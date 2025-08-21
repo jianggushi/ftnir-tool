@@ -21,7 +21,7 @@ def test_1():
 
 
 def test_2():
-    from util.signal import generate_test_signal
+    from util.interferogram import generate_test_signal
 
     t, x, _ = generate_test_signal()
 
