@@ -46,3 +46,11 @@ class TemperatureData:
 class HumidityData:
     data: float
     timestamp: int
+
+
+@dataclass
+class HardwareData:
+    resolution: int
+    velocity: int
+    direction: int
+    scan_mode: int

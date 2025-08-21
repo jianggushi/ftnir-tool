@@ -3,6 +3,7 @@ import struct
 
 from comm.protocol.parser import RawMessage, Command
 from comm.manager import CommManager
+from core.model.spectrum import HardwareData
 
 from .base import BaseService
 
@@ -18,7 +19,8 @@ class HardwareService(BaseService):
     def handle(self, msg: RawMessage):
         pass
 
-    def set_hardware_setting(self, setting: int):
-        self.comm_manager.send_message(
-            Command.SET_HARDWARE_SETTING, struct.pack(">B", setting)
+    def set_hardware_setting(self, data: HardwareData):
+        data_bytes = struct.pack(
+            ">BBBB", data.resolution, data.velocity, data.direction, data.scan_mode
         )
+        self.comm_manager.send_message(Command.SET_HARDWARE_SETTING, data_bytes)

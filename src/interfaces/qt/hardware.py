@@ -1,6 +1,6 @@
 import logging
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal, Slot
 
 from core.service.hardware import HardwareService
 from ui_qt.control_widget import HardwareSettingWidget
@@ -21,6 +21,7 @@ class HardwareController(QObject):
 
         self.view.save_button.clicked.connect(self.on_setting_save)
 
+    @Slot()
     def on_setting_save(self):
         setting = self.view.get_settings()
         self.svc.set_hardware_setting(setting)
