@@ -1,3 +1,4 @@
+import enum
 import numpy as np
 from scipy import signal
 
@@ -20,6 +21,38 @@ class RemoveDCProcessor(BaseProcessor):
 
     def process_v1(self, data: np.ndarray) -> np.ndarray:
         return data - np.mean(data)
+
+
+class WindowType(enum.Enum):
+    """
+    窗口类型
+    """
+
+    RECTANGLE = "boxcar"
+    TRIANGLE = "triang"
+    GAUSSIAN = "gaussian"
+    HAMMING = "hamming"
+    HANNING = "hann"
+    BLACKMANHARRIS = "blackmanharris"
+
+
+class WindowProcessor(BaseProcessor):
+    """
+    窗口处理器
+    """
+
+    def __init__(self, window_type: WindowType):
+        super().__init__()
+        self.window_type = window_type
+
+    def process(self, data: np.ndarray) -> np.ndarray:
+        if self.window_type == WindowType.GAUSSIAN:
+            window = signal.get_window(
+                (self.window_type.value, len(data) / 8), len(data)
+            )
+        else:
+            window = signal.get_window(self.window_type.value, len(data))
+        return data * window
 
 
 class FFTProcessor(BaseProcessor):
