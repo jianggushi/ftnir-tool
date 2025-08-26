@@ -3,7 +3,7 @@ import struct
 
 from comm.protocol.parser import RawMessage, Command
 from comm.manager import CommManager
-from core.model.spectrum import TemperatureData
+from core.model.types import TemperatureData
 
 
 from .base import BaseService

@@ -4,7 +4,7 @@ import numpy as np
 
 from .base import BaseService
 from comm.protocol.parser import RawMessage, Command
-from core.model.spectrum import SpectrumData
+from core.model.types import SpectrumData
 from core.processor.interference import FFTProcessor
 
 logger = logging.getLogger(__name__)

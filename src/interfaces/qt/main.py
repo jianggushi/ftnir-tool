@@ -17,11 +17,13 @@ from core.service.signalcheck import (
     LightStabilityService,
     WaveAccuracyService,
     WaveRepeatabilityService,
+    LaserStabilityService,
 )
 from .signalcheck import (
     LightStabilityController,
     WaveAccuracyController,
     WaveRepeatabilityController,
+    LaserStabilityController,
 )
 
 from core.service.motor import RotateMotorService, ScrewMotorService
@@ -126,6 +128,13 @@ class MainController:
         self.wave_repeatability_controller = WaveRepeatabilityController(
             self.wave_repeatability_svc,
             self.view.wave_repeatability_widget,
+        )
+
+        # 激光稳定性检查
+        self.laser_stability_svc = LaserStabilityService(self.comm_manager)
+        self.laser_stability_controller = LaserStabilityController(
+            self.laser_stability_svc,
+            self.view.laser_stability_widget,
         )
 
         self.temperature_svc = TemperatureService(self.comm_manager)

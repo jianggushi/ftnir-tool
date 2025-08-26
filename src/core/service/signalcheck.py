@@ -5,7 +5,12 @@ from collections import deque
 
 from comm.protocol.parser import RawMessage, Command
 from comm.manager import CommManager
-from core.model.spectrum import LightStabilityData, SpectrumData, InterferenceData
+from core.model.types import (
+    LightStabilityData,
+    LaserStabilityData,
+    SpectrumData,
+    InterferenceData,
+)
 from core.processor.interference import FFTProcessor
 
 from .base import BaseService, parse_interference_data
@@ -137,6 +142,40 @@ class WaveRepeatabilityService(BaseService):
 
     def start_check(self):
         self.comm_manager.send_message(Command.CHECK_STANDARD_WAVE_REPEATABILITY)
+
+    def stop_check(self):
+        self.comm_manager.send_message(Command.CHECK_STOP)
+
+
+class LaserStabilityService(BaseService):
+    def __init__(self, comm_manager: CommManager):
+        super().__init__()
+
+        self.comm_manager = comm_manager
+        self.comm_manager.register_handler(Command.CHECK_LASER_STABILITY_RES, self)
+
+    def handle(self, msg: RawMessage):
+        if msg.command != Command.CHECK_LASER_STABILITY_RES:
+            return
+        try:
+            points = parse_interference_data(msg.data)
+            interference_data = np.array(points, dtype=np.float32)
+            # spectrum_data = self._fft_processor.process(interference_data)
+            # 计算振幅
+            amplitude = (np.max(interference_data) - np.min(interference_data)) / 2
+
+            # run callbacks
+            laser_stability_data = LaserStabilityData(
+                interference_data,
+                amplitude,
+                None,
+            )
+            self._run_callbacks(laser_stability_data)
+        except Exception as e:
+            logger.error(f"failed to handle message {msg.command}: {e}")
+
+    def start_check(self):
+        self.comm_manager.send_message(Command.CHECK_LASER_STABILITY)
 
     def stop_check(self):
         self.comm_manager.send_message(Command.CHECK_STOP)

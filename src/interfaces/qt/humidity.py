@@ -3,7 +3,7 @@ import logging
 from PySide6.QtCore import QObject, Signal, QTimer
 
 from core.service.humidity import HumidityService
-from core.model.spectrum import HumidityData
+from core.model.types import HumidityData
 
 from ui_qt.status_bar import StatusBarWidget
 

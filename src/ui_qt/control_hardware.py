@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Slot
 
-from core.model.spectrum import HardwareData
+from core.model.types import HardwareData
 
 
 class ResolutionEnum(enum.Enum):

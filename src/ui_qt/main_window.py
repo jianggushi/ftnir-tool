@@ -18,6 +18,7 @@ from .setting_widget import (
 from .signal_light_stability import LightStabilityWidget
 from .signal_wave_accuracy import WaveAccuracyWidget
 from .signal_wave_repeatability import WaveRepeatabilityWidget
+from .signal_laser_stability import LaserStabilityWidget
 from .log_widget import LogWidget
 from .status_bar import StatusBarWidget
 
@@ -107,6 +108,9 @@ class MainWindow(QMainWindow):
         signal_menu.addAction("波数重复性", self.open_wave_repeatability_widget)
         self.wave_repeatability_widget = WaveRepeatabilityWidget()
 
+        signal_menu.addAction("激光信号", self.open_laser_stability_widget)
+        self.laser_stability_widget = LaserStabilityWidget()
+
         tool_menu = QMenu("工具", self)
         menu_bar.addMenu(tool_menu)
         tool_menu.addAction("日志", self.open_log_widget)
@@ -135,6 +139,9 @@ class MainWindow(QMainWindow):
 
     def open_wave_repeatability_widget(self):
         self.wave_repeatability_widget.show()
+
+    def open_laser_stability_widget(self):
+        self.laser_stability_widget.show()
 
     def open_log_widget(self):
         self.log_widget.show()

@@ -37,6 +37,16 @@ class LightStabilityData:
 
 
 @dataclass
+class LaserStabilityData:
+    interference_data: np.ndarray  # 干涉数据
+    amplitude: float  # 干涉数据的振幅
+
+    spectrum_data: np.ndarray  # 光谱数据
+    # spectrum_max_max: float  # 光谱最大强度的最大值
+    # spectrum_min_max: float  # 光谱最大强度的最小值
+
+
+@dataclass
 class TemperatureData:
     data: float
     timestamp: int

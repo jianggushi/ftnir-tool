@@ -18,17 +18,14 @@ from matplotlib.figure import Figure
 
 from util.util import init_font
 
-from core.model.types import LightStabilityData
+from core.model.types import LaserStabilityData
 
 
-class WaveRepeatabilityWidget(QWidget):
+class LaserStabilityWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("波数重复性检查")
-
+        self.setWindowTitle("激光信号检查")
         self.resize(1200, 800)
-
-        self.light_stability_data: LightStabilityData = None
 
         self.setup_ui()
 
@@ -40,14 +37,19 @@ class WaveRepeatabilityWidget(QWidget):
         main_layout.addWidget(top_widget, 0)
 
         down_widget = QTabWidget()
-        self.spectrum_figure = SpectrumFigure()
-        down_widget.addTab(self.spectrum_figure, "光谱图")
+        self.interference_figure = InterferenceFigure()
+        down_widget.addTab(self.interference_figure, "干涉图")
 
         main_layout.addWidget(down_widget, 1)
 
     def create_top_widget(self) -> QWidget:
         top_widget = QWidget()
         top_layout = QHBoxLayout(top_widget)
+
+        self.amplitude_label = QLabel("0.0")
+        top_layout.addWidget(QLabel("振幅:"))
+        top_layout.addWidget(self.amplitude_label)
+
         top_layout.addStretch()
 
         self.start_button = QPushButton("开始检查")
@@ -57,27 +59,37 @@ class WaveRepeatabilityWidget(QWidget):
         top_layout.addWidget(self.start_button)
         top_layout.addWidget(self.stop_button)
 
-        self.save_button = QPushButton("保存数据")
-        top_layout.addWidget(self.save_button)
-
         return top_widget
 
-    @Slot(object)
-    def on_receive_data(self, data: LightStabilityData):
-        self.light_stability_data = data
+    # def create_data_tab(self) -> QWidget:
+    #     data_tab = QWidget()
+    #     data_layout = QVBoxLayout(data_tab)
 
-        spectrum_data = data.spectrum_data
-        x_data = list(range(spectrum_data.shape[0]))
-        self.spectrum_figure.update_data(
-            x_data, spectrum_data.tolist(), data.spectrum_max_max
-        )
+    #     # 数据表格
+    #     self.light_table = QTableWidget()
+    #     self.light_table.setColumnCount(3)
+    #     self.light_table.setHorizontalHeaderLabels(["时间", "强度", "状态"])
+    #     self.light_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+    #     data_layout.addWidget(self.light_table)
+
+    #     return data_tab
+
+    @Slot(object)
+    def on_receive_data(self, data: LaserStabilityData):
+        self.laser_stability_data = data
+
+        self.amplitude_label.setText(f"{data.amplitude:.6f}")
+
+        interference_data = data.interference_data
+        x_data = list(range(interference_data.shape[0]))
+        self.interference_figure.update_data(x_data, interference_data.tolist(), 0)
 
         # self.interference_figure.max_max_label.setText(
         #     f"{data.interference_max_max:.6f}"
         # )
 
 
-class SpectrumFigure(QWidget):
+class InterferenceFigure(QWidget):
     def __init__(self):
         super().__init__()
         init_font()
@@ -88,7 +100,7 @@ class SpectrumFigure(QWidget):
         self._x_min = 0
         self._x_max = 1
         self._y_min = 0
-        self._y_max = 0
+        self._y_max = 2
 
         self.ref_max = 0
 
@@ -100,6 +112,9 @@ class SpectrumFigure(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(main_layout)
 
+        self.max_max_label = QLabel("0.0")
+        self.ref_max_label = QLabel("0.0")
+
         self.figure = Figure(figsize=(8, 6), tight_layout=True)
         self.canvas = FigureCanvas(self.figure)
         toolbar = NavigationToolbar(self.canvas, self)
@@ -109,15 +124,15 @@ class SpectrumFigure(QWidget):
     def _init_plot(self):
         """初始化绘图"""
         self.ax = self.figure.add_subplot(1, 1, 1)
-        self.ax.set_xlabel("波数")
-        self.ax.set_ylabel("光谱图强度")
+        self.ax.set_xlabel("数据点")
+        self.ax.set_ylabel("干涉图强度")
 
         # 设置初始坐标范围
         self.ax.set_xlim(self._x_min, self._x_max)
         self.ax.set_ylim(self._y_min, self._y_max)
 
         # 创建空的线条对象
-        (self.aline,) = self.ax.plot([], [], "b-")
+        (self.aline,) = self.ax.plot(self._x_data, self._y_data, color="blue")
         self.ref_max_line = self.ax.axhline(
             y=self.ref_max, color="red", linestyle="--", label="参考最大强度"
         )
@@ -128,17 +143,18 @@ class SpectrumFigure(QWidget):
     def set_ref_max(self, ref_max: float):
         self.ref_max = ref_max
         self.ref_max_line.set_ydata([ref_max, ref_max])
+        self.ref_max_label.setText(f"{ref_max:.6f}")
         self.canvas.draw()
 
     def update_data(self, x_data: list[float], y_data: list[float], max_max: float):
         """更新数据并重绘"""
-        # 更新数据
         self._x_data = x_data
         self._y_data = y_data
 
         # 更新线条数据
         self.aline.set_data(self._x_data, self._y_data)
         self.max_max_line.set_ydata([max_max, max_max])
+        self.max_max_label.setText(f"{max_max:.6f}")
 
         # 调整坐标范围
         self._x_max = max(max(self._x_data), self._x_max)
@@ -158,13 +174,3 @@ class SpectrumFigure(QWidget):
         self._y_data = []
         self.aline.set_data([], [])
         self.canvas.draw()
-
-
-if __name__ == "__main__":
-    import sys
-    from PySide6.QtWidgets import QApplication
-
-    app = QApplication(sys.argv)
-    window = LightStabilityWidget()
-    window.show()
-    sys.exit(app.exec_())

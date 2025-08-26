@@ -56,12 +56,61 @@ class WindowProcessor(BaseProcessor):
 
 
 class FFTProcessor(BaseProcessor):
-    def __init__(self, zero_padding: bool = False):
+    def __init__(self):
         super().__init__()
-        self._zero_padding = zero_padding
 
     def process(self, data: np.ndarray) -> np.ndarray:
-        y1 = np.fft.rfft(data, norm="forward")
-        y2 = np.abs(y1)
+        spectrum = self.fft_mertz(data)
 
-        return self._process_next(y2)
+        return self._process_next(spectrum)
+
+    def fft_abs(self, data: np.ndarray) -> np.ndarray:
+        N_original = len(data)
+        N_padded = 2 ** int(np.ceil(np.log2(N_original)))
+
+        # 计算FFT
+        spectrum_complex = np.fft.fft(data, N_padded)
+
+        # 取模
+        spectrum = np.abs(spectrum_complex)
+
+        return spectrum
+
+    def fft_mertz(self, data: np.ndarray) -> np.ndarray:
+        N_original = len(data)
+        N_padded = 2 ** int(np.ceil(np.log2(N_original)))
+
+        # 进行FFT，得到复数谱
+        spectrum_complex = np.fft.fftshift(np.fft.fft(data, N_padded))
+
+        # 计算相位
+        spectrum_phase = np.unwrap(np.angle(spectrum_complex))
+        # 相位校正
+        spectrum_corrected = np.abs(spectrum_complex) * np.cos(spectrum_phase)
+
+        return spectrum_corrected[N_padded // 2 :]
+
+    def fft_mertz_2(self, data: np.ndarray) -> np.ndarray:
+        zpd_index = np.argmax(np.abs(data))  # 找到零光程差位置
+
+        N_original = len(data)
+        N_padded = 2 ** int(np.ceil(np.log2(N_original)))
+
+        # 截取零光程差附近的2048个点
+        N_center = 2048
+        data_low = np.zeros(len(data))
+        data_low[zpd_index - N_center // 2 : zpd_index + N_center // 2] = data[
+            zpd_index - N_center // 2 : zpd_index + N_center // 2
+        ]
+        # 计算低分辨率FFT
+        spectrum_low = np.fft.fft(data_low, N_padded)
+        # 计算低分辨率相位谱
+        spectrum_phase = np.angle(spectrum_low)
+        # 计算全分辨率FFT
+        spectrum_full = np.fft.fft(data, N_padded)
+        # 相位校正
+        spectrum_full_corrected = spectrum_full * np.exp(1j * spectrum_phase)
+
+        spectrum = np.real(spectrum_full_corrected)
+
+        return spectrum

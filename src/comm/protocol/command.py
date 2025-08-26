@@ -15,6 +15,9 @@ class Command(enum.IntEnum):
     # 标准物质波长重复性检测
     CHECK_STANDARD_WAVE_REPEATABILITY = 0x0112  # 标准物质波长重复性检测
     CHECK_STANDARD_WAVE_REPEATABILITY_RES = 0x0212
+    # 激光信号检查
+    CHECK_LASER_STABILITY = 0x011E
+    CHECK_LASER_STABILITY_RES = 0x021E
     # 停止检测
     CHECK_STOP = 0x011F
 

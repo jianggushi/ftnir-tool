@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Signal, Slot
 
-from core.model.spectrum import SpectrumData
+from core.model.types import SpectrumData
 
 
 class CollectWidget(QGroupBox):

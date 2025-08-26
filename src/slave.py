@@ -8,7 +8,10 @@ from typing import Callable
 
 from config.log import setup_logging
 from util.interferogram import generate_test_signal
-from util.interferogram_insa import simulate_sample_interferogram
+from util.interferogram import (
+    simulate_sample_interferogram,
+    simulate_laser_interferogram,
+)
 from comm.protocol.command import Command
 from comm.transport.serial import SerialTransport
 from comm.protocol.parser import MessageParser
@@ -38,6 +41,7 @@ class SlaveManager:
             Command.CHECK_LIGHT_STABILITY: self.receive_check_light_stability,
             Command.CHECK_STANDARD_WAVE_ACCURACY: self.receive_check_wave_accuracy,
             Command.CHECK_STANDARD_WAVE_REPEATABILITY: self.receive_check_repeatability,
+            Command.CHECK_LASER_STABILITY: self.receive_check_laser,
             Command.CHECK_STOP: self.receive_check_stop,
             Command.COLLECT_DARK_NOISE_REQ: self.receive_collect_dark_noise,
             Command.COLLECT_BACKGROUND_REQ: self.receive_collect_background,
@@ -129,6 +133,15 @@ class SlaveManager:
         test_data = sig.tolist()
         data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
         self._send_message(Command.CHECK_STANDARD_WAVE_REPEATABILITY_RES, data_bytes)
+
+    def receive_check_laser(self, raw_message: RawMessage):
+        """处理激光检测请求"""
+        if raw_message.command != Command.CHECK_LASER_STABILITY:
+            return
+        t, sig = simulate_laser_interferogram()
+        test_data = sig.tolist()
+        data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
+        self._send_message(Command.CHECK_LASER_STABILITY_RES, data_bytes)
 
     def receive_check_stop(self, raw_message: RawMessage):
         """处理停止检测请求"""

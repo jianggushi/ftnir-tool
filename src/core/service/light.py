@@ -28,3 +28,9 @@ class LightService(BaseService):
 
     def turn_off_laser(self):
         self.comm_manager.send_message(Command.TURN_OFF_LASER)
+
+    def get_light_status(self):
+        self.comm_manager.send_message(Command.LIGHT_STATUS_REQ)
+
+    def get_laser_status(self):
+        self.comm_manager.send_message(Command.LASER_STATUS_REQ)
