@@ -36,16 +36,11 @@ class CollectService(BaseService):
 
             spectrum_data = self._fft_processor.process(interference_data)
 
-            d = (
-                1.0
-                / self.instrumentInfo.get_resolution().to_float()
-                / len(spectrum_data)
-            )
+            # 计算频率轴
+            resolution = self.instrumentInfo.get_resolution().to_float()
+            freq_data = self._fft_processor.fft_freq(len(spectrum_data), resolution)
 
-            freq_data = self._fft_processor.fft_freq(len(spectrum_data), d)
-
-            # mask = (freq_data >= 4000) & (freq_data <= 12000)
-            mask = freq_data >= 4000
+            mask = (freq_data >= 4000) & (freq_data <= 12000)
             freq_data = freq_data[mask]
             spectrum_data = spectrum_data[mask]
 

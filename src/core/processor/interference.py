@@ -64,7 +64,8 @@ class FFTProcessor(BaseProcessor):
 
         return self._process_next(spectrum)
 
-    def fft_freq(self, n: int, d: float) -> np.ndarray:
+    def fft_freq(self, n: int, resolution: float) -> np.ndarray:
+        d = 1.0 / resolution / n
         freq = np.fft.fftshift(np.fft.fftfreq(n, d))
         return freq
 
