@@ -60,16 +60,20 @@ class FFTProcessor(BaseProcessor):
         super().__init__()
 
     def process(self, data: np.ndarray) -> np.ndarray:
-        spectrum = self.fft_mertz(data)
+        spectrum = self.fft_abs(data)
 
         return self._process_next(spectrum)
+
+    def fft_freq(self, n: int, d: float) -> np.ndarray:
+        freq = np.fft.fftshift(np.fft.fftfreq(n, d))
+        return freq
 
     def fft_abs(self, data: np.ndarray) -> np.ndarray:
         N_original = len(data)
         N_padded = 2 ** int(np.ceil(np.log2(N_original)))
 
         # 计算FFT
-        spectrum_complex = np.fft.fft(data, N_padded)
+        spectrum_complex = np.fft.fftshift(np.fft.fft(data))
 
         # 取模
         spectrum = np.abs(spectrum_complex)

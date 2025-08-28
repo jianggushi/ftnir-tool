@@ -4,7 +4,7 @@ from scipy.signal import windows
 from scipy.signal import detrend
 import matplotlib.pyplot as plt
 
-N = 10000
+N = 3000
 
 
 def simulate_sample_interferogram(
@@ -12,7 +12,7 @@ def simulate_sample_interferogram(
 ):
 
     # 定义光程差范围
-    opd = (-0.1625, 0.1625)
+    opd = (-0.0625, 0.0625)
     # 定义采样点数
     sample_num = N
 

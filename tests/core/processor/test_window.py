@@ -1,7 +1,6 @@
 import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
-from util.interference_data import interference_signal
 
 
 def original_signal():

@@ -18,7 +18,7 @@ from matplotlib.figure import Figure
 
 from util.util import init_font
 
-from core.model.types import LaserStabilityData
+from config.types import LaserStabilityData
 
 
 class LaserStabilityWidget(QWidget):

@@ -3,7 +3,7 @@ from sqlalchemy import select, update
 
 from core.model.engine import db
 from core.model.light_stability import LightStabilityResult
-from core.model.types import LightStabilityData
+from config.types import LightStabilityData
 
 from core.service.signalcheck import (
     LightStabilityService,

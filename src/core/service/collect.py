@@ -1,15 +1,16 @@
 import logging
 import struct
+import time
 import numpy as np
-from collections import deque
 
 from comm.protocol.parser import RawMessage, Command
 from comm.manager import CommManager
-from core.model.types import CollectData
+from config.types import CollectData
 from core.processor.interference import FFTProcessor
+from core.store.txt import TxtStore
 
 from .base import BaseService, parse_interference_data
-
+from .instrument_info import instrumentInfo
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class CollectService(BaseService):
 
         self.comm_manager = comm_manager
         self._fft_processor = FFTProcessor()
+        self.instrumentInfo = instrumentInfo
 
     def handle(self, msg: RawMessage):
         if (
@@ -34,13 +36,40 @@ class CollectService(BaseService):
 
             spectrum_data = self._fft_processor.process(interference_data)
 
+            d = (
+                1.0
+                / self.instrumentInfo.get_resolution().to_float()
+                / len(spectrum_data)
+            )
+
+            freq_data = self._fft_processor.fft_freq(len(spectrum_data), d)
+
+            # mask = (freq_data >= 4000) & (freq_data <= 12000)
+            mask = freq_data >= 4000
+            freq_data = freq_data[mask]
+            spectrum_data = spectrum_data[mask]
+
             # save data
-            # filename = f"data/interference_{time.strftime('%Y%m%d_%H%M%S')}.txt"
-            # np.savetxt(filename, interference_data, fmt="%.6f", delimiter=",")
+            now = time.strftime("%Y%m%d_%H%M%S")
+            filename = f"data/interference_{now}.txt"
+            meta_data = {
+                "Time": now,
+                "Direction": "Positive",
+                "Lamp current": 0.0,
+                "Interferometer temperature": 0.0,
+                "Interferometer humidity": 0.0,
+                "Laser wavelength(nm)": 638.0,
+                "VCM speed": 0.0,
+                "Resolution": 8,
+                "Gain": 1,
+                "Acquisition Times": 1,
+            }
+            TxtStore().write(filename, interference_data, meta=meta_data)
 
             # run callbacks
             spectrum_data = CollectData(
                 interference_data,
+                freq_data,
                 spectrum_data,
             )
             self._run_callbacks(spectrum_data)

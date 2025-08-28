@@ -3,7 +3,7 @@ import logging
 from PySide6.QtCore import QObject, Signal, QTimer
 
 from core.service.temperature import TemperatureService
-from core.model.types import TemperatureData
+from config.types import TemperatureData
 
 from ui_qt.status_bar import StatusBarWidget
 

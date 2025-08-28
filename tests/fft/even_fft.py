@@ -14,6 +14,7 @@ print("采样点:", t)
 f0 = 1.0
 y0 = np.cos(2 * np.pi * f0 * t)
 y = np.cos(2 * np.pi * f0 * t - 0.5)
+# y = y0
 
 print("原始信号:", y)
 

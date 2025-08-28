@@ -4,7 +4,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-from core.model.types import CollectData
+from config.types import CollectData
 
 from util.util import init_font
 
@@ -46,13 +46,12 @@ class SpectrumFigureWidget(QWidget):
         self.bx.set_ylabel("光谱图强度")
 
         # 设置初始坐标范围
-        # self.ax.set_xlim(0, 1000)  # 默认显示前1000个数据点
-        # self.ax.set_ylim(-1.0, 1.0)  # 根据信号强度合理范围设定
-        # self.ax.set_title("FTIR数据")
+        self.ax.set_xlim(0, 1000)
+        self.bx.set_xlim(12000, 4000)
 
         # 创建空的线条对象
-        (self.aline,) = self.ax.plot([], [], "b-")
-        (self.bline,) = self.bx.plot([], [], "b-")
+        (self.aline,) = self.ax.plot([], [], "b-", linewidth=1.0)
+        (self.bline,) = self.bx.plot([], [], "b-", linewidth=1.0)
 
     def update_aline(self, x_data, y_data):
         """更新数据并重绘
@@ -99,7 +98,7 @@ class SpectrumFigureWidget(QWidget):
 
         # 设置新的x轴范围
         if len(self._x_data) > 0:
-            self.bx.set_xlim(min(self._x_data), max(self._x_data))
+            self.bx.set_xlim(max(self._x_data), min(self._x_data))
 
         # 重绘画布
         self.canvas.draw()
@@ -115,9 +114,10 @@ class SpectrumFigureWidget(QWidget):
         interference_data = data.interference_data
         x_data = list(range(interference_data.shape[0]))
         self.update_aline(x_data, interference_data.tolist())
+
         spectrum_data = data.spectrum_data
-        x_data = list(range(spectrum_data.shape[0]))
-        self.update_bline(x_data, spectrum_data.tolist())
+        x_data = data.freq_data
+        self.update_bline(x_data.tolist(), spectrum_data.tolist())
 
 
 if __name__ == "__main__":

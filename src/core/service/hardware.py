@@ -3,7 +3,7 @@ import struct
 
 from comm.protocol.parser import RawMessage, Command
 from comm.manager import CommManager
-from core.model.types import HardwareData
+from config.types import HardwareData
 
 from .base import BaseService
 
