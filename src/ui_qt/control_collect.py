@@ -64,6 +64,16 @@ class CollectWidget(QGroupBox):
 
         main_layout.addLayout(button_layout)
 
+        show_layout = QHBoxLayout()
+        show_layout.addWidget(QLabel("显示:"))
+        self.show_ax_checkbox = QCheckBox("干涉图")
+        self.show_bx_checkbox = QCheckBox("光谱图")
+        self.show_ax_checkbox.setChecked(True)
+        self.show_bx_checkbox.setChecked(True)
+        show_layout.addWidget(self.show_ax_checkbox)
+        show_layout.addWidget(self.show_bx_checkbox)
+        main_layout.addLayout(show_layout)
+
     def setup_signals(self):
         self.continuous_mode.toggled.connect(self.on_continuous_toggled)
 

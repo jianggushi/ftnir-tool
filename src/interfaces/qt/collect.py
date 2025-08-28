@@ -30,6 +30,14 @@ class CollectController(QObject):
         self.view.start_button.clicked.connect(self.on_start_collect)
         self.view.stop_button.clicked.connect(self.on_stop_collect)
 
+        self.view.show_ax_checkbox.checkStateChanged.connect(
+            self.on_show_checkbox_changed
+        )
+        self.view.show_bx_checkbox.checkStateChanged.connect(
+            self.on_show_checkbox_changed
+        )
+
+    @Slot()
     def on_start_collect(self):
         continuous_mode = self.view.get_continuous_mode()
         num = self.view.get_collect_num()
@@ -43,9 +51,17 @@ class CollectController(QObject):
 
         self.view.start_collect()
 
+    @Slot()
     def on_stop_collect(self):
         self.svc.stop_collect()
         self.view.stop_collect()
+
+    @Slot()
+    def on_show_checkbox_changed(self):
+        show_ax = self.view.show_ax_checkbox.isChecked()
+        show_bx = self.view.show_bx_checkbox.isChecked()
+
+        self.spectrum_figure.show_ax_or_bx(show_ax, show_bx)
 
     def on_receive_data(self, data: CollectData):
         self.collect_data.emit(data)
