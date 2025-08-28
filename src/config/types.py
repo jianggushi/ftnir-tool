@@ -48,10 +48,8 @@ class VelocityEnum(enum.Enum):
 
 
 class ScanModeEnum(enum.Enum):
-    S_1 = (1, "单向-单边")
-    S_2 = (2, "单向-双边")
-    S_3 = (3, "双向-单边")
-    S_4 = (4, "双向-双边")
+    S_1 = (1, "单边")
+    S_2 = (2, "双边")
 
     def __init__(self, num, label):
         self._value_ = num
@@ -68,6 +66,7 @@ class ScanModeEnum(enum.Enum):
 class DirectionEnum(enum.Enum):
     D_P = (1, "正向")
     D_N = (2, "反向")
+    D_B = (3, "双向")
 
     def __init__(self, num, label):
         self._value_ = num
