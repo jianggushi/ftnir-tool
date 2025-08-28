@@ -187,6 +187,7 @@ class ScrewMotorWidget(QGroupBox):
         self.target_7_button = QPushButton("7")
         self.target_8_button = QPushButton("8")
         self.target_reset_button = QPushButton("复位")
+        self.target_hide_button = QPushButton("遮挡")
         target_layout.addWidget(self.target_1_button, 0, 0)
         target_layout.addWidget(self.target_2_button, 0, 1)
         target_layout.addWidget(self.target_3_button, 0, 2)
@@ -196,60 +197,13 @@ class ScrewMotorWidget(QGroupBox):
         target_layout.addWidget(self.target_7_button, 1, 2)
         target_layout.addWidget(self.target_8_button, 1, 3)
         target_layout.addWidget(self.target_reset_button, 2, 0)
+        target_layout.addWidget(self.target_hide_button, 2, 1)
 
         main_layout.addLayout(target_layout)
-
-    def setup_signals(self):
-        self.offset_button.clicked.connect(self.on_offset_set)
-        self.target_1_button.clicked.connect(self.on_target_1_set)
-        self.target_2_button.clicked.connect(self.on_target_2_set)
-        self.target_3_button.clicked.connect(self.on_target_3_set)
-        self.target_4_button.clicked.connect(self.on_target_4_set)
-        self.target_5_button.clicked.connect(self.on_target_5_set)
-        self.target_6_button.clicked.connect(self.on_target_6_set)
-        self.target_7_button.clicked.connect(self.on_target_7_set)
-        self.target_8_button.clicked.connect(self.on_target_8_set)
-        self.target_reset_button.clicked.connect(self.on_target_reset_set)
 
     def get_offset(self) -> int:
         offset = self.offset_spinbox.value()
         return offset
-
-    @Slot()
-    def on_target_1_set(self):
-        self.qt_controller.set_screw_target(1)
-
-    @Slot()
-    def on_target_2_set(self):
-        self.qt_controller.set_screw_target(2)
-
-    @Slot()
-    def on_target_3_set(self):
-        self.qt_controller.set_screw_target(3)
-
-    @Slot()
-    def on_target_4_set(self):
-        self.qt_controller.set_screw_target(4)
-
-    @Slot()
-    def on_target_5_set(self):
-        self.qt_controller.set_screw_target(5)
-
-    @Slot()
-    def on_target_6_set(self):
-        self.qt_controller.set_screw_target(6)
-
-    @Slot()
-    def on_target_7_set(self):
-        self.qt_controller.set_screw_target(7)
-
-    @Slot()
-    def on_target_8_set(self):
-        self.qt_controller.set_screw_target(8)
-
-    @Slot()
-    def on_target_reset_set(self):
-        self.qt_controller.set_screw_target(0)
 
 
 class ControlWidget(QWidget):

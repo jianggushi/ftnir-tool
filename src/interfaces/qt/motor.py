@@ -101,6 +101,7 @@ class ScrewMotorController(QObject):
         self.view.target_7_button.clicked.connect(self.on_target_7_set)
         self.view.target_8_button.clicked.connect(self.on_target_8_set)
         self.view.target_reset_button.clicked.connect(self.on_target_reset)
+        self.view.target_hide_button.clicked.connect(self.on_target_hide)
 
     def on_offset_set(self):
         try:
@@ -160,5 +161,11 @@ class ScrewMotorController(QObject):
     def on_target_reset(self):
         try:
             self.svc.set_screw_target(0)
+        except Exception as e:
+            logger.error(f"设置旋转电机目标位置失败: {e}")
+
+    def on_target_hide(self):
+        try:
+            self.svc.set_screw_target(9)
         except Exception as e:
             logger.error(f"设置旋转电机目标位置失败: {e}")
