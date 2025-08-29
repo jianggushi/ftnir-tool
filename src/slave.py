@@ -184,7 +184,9 @@ class SlaveManager:
         self.collect_running = True
 
         while self.collect_running and (num > 0 or continuous_mode):
-            t, sig, freq = generate_test_signal()
+            t, sig = simulate_sample_interferogram(
+                "../data/insa/001 _2_20250306T103419_ref.txt"
+            )
             test_data = sig.tolist()
             data_bytes = struct.pack(f">{len(test_data)}f", *test_data)
             self._send_message(Command.COLLECT_BACKGROUND_RES, data_bytes)
@@ -207,7 +209,7 @@ class SlaveManager:
 
         while self.collect_running and (num > 0 or continuous_mode):
             t, sig = simulate_sample_interferogram(
-                "../data/insa/001 _2_20250306T103419_ref.txt"
+                "../data/insa/001 _2_20250306T103419_spec0.txt"
             )
 
             test_data = sig.tolist()
