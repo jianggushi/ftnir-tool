@@ -41,6 +41,9 @@ from .temperature import TemperatureController
 from core.service.humidity import HumidityService
 from .humidity import HumidityController
 
+from core.service.pwm import PwmService
+from .pwm import PwmController
+
 
 logger = logging.getLogger(__name__)
 
@@ -85,6 +88,13 @@ class MainController:
         self.screw_motor_controller = ScrewMotorController(
             self.screw_motor_svc,
             self.view.control_widget.screw_widget,
+        )
+
+        # 脉冲宽度调制控制
+        self.pwm_svc = PwmService(self.comm_manager)
+        self.pwm_controller = PwmController(
+            self.pwm_svc,
+            self.view.control_widget.pwm_widget,
         )
 
         # 硬件控制

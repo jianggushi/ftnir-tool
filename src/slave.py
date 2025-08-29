@@ -88,7 +88,7 @@ class SlaveManager:
             threading.Thread(target=handle_func, args=(msg,)).start()
         else:
             logger.warning(
-                f"no handler found for message: {msg.command.name}, {msg.data}"
+                f"no handler found for message: {msg.command.name}, {msg.data.hex(sep=" ")}"
             )
 
     def _send_message(self, command: Command, data: bytes = b""):

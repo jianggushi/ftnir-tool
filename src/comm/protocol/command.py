@@ -65,5 +65,8 @@ class Command(enum.IntEnum):
     # 设置丝杆电机目标位置
     SET_SCREW_TARGET = 0x0313
 
+    # 设置PWM参数
+    SET_PWM_PARAM = 0x0314
+
     # 设置硬件配置
     SET_HARDWARE_SETTING = 0x03F0
